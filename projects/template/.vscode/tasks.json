@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Start Minecraft Project",
+      "label": "Auto Build",
       "type": "shell",
       "command": "node",
       "args": [
@@ -47,7 +47,7 @@
       ]
     },
     {
-      "label": "Stop Minecraft Project",
+      "label": "Stop Auto Build",
       "type": "shell",
       "command": "taskkill",
       "args": [

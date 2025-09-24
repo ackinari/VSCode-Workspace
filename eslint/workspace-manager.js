@@ -67,6 +67,9 @@ class WorkspaceManager {
     // Ensure shared dependencies
     await this.ensureSharedDependencies();
     
+    // Create/update project tsconfig for VS Code
+    await this.createProjectTsConfig(currentDir);
+    
     // Start watcher
     this.startWatcher(projectName, currentDir);
     
@@ -237,9 +240,17 @@ class WorkspaceManager {
             typeRoots: [],
             types: [],
             lib: ["ES2020", "DOM"],
-            moduleDetection: "force"
+            moduleDetection: "force",
+            baseUrl: ".",
+            paths: {
+              "libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
+              "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
+            }
           },
-          include: [path.join(sourceDir, "**/*")],
+          include: [
+            path.join(sourceDir, "**/*"),
+            path.relative(projectPath, path.join(this.librariesDir, "**/*")).replace(/\\/g, '/')
+          ],
           exclude: ["node_modules", "**/*.d.ts", "**/node_modules/**"]
         };
 
@@ -418,12 +429,6 @@ class WorkspaceManager {
     // Scan source files for library imports
     const usedLibraries = await this.detectLibraryUsage(sourceDir);
     
-    if (usedLibraries.length === 0) {
-      return; // No libraries used
-    }
-
-    console.log(`Detected library usage: ${usedLibraries.join(', ')}`);
-
     // Determine destination based on project type
     const projectName = path.basename(projectPath);
     let librariesDestPath;
@@ -437,6 +442,31 @@ class WorkspaceManager {
       const scriptsPath = path.join(behaviorPackPath, 'scripts');
       librariesDestPath = path.join(scriptsPath, 'libraries');
     }
+
+    // Clean up unused libraries first
+    if (fs.existsSync(librariesDestPath)) {
+      const existingLibs = fs.readdirSync(librariesDestPath)
+        .filter(item => fs.statSync(path.join(librariesDestPath, item)).isDirectory());
+      
+      for (const existingLib of existingLibs) {
+        if (!usedLibraries.includes(existingLib)) {
+          const libPath = path.join(librariesDestPath, existingLib);
+          this.removeDirectory(libPath);
+          console.log(`Removed unused library: ${existingLib}`);
+        }
+      }
+    }
+
+    if (usedLibraries.length === 0) {
+      // Remove entire libraries folder if no libraries are used
+      if (fs.existsSync(librariesDestPath)) {
+        this.removeDirectory(librariesDestPath);
+        console.log('Removed libraries folder (no libraries in use)');
+      }
+      return;
+    }
+
+    console.log(`Detected library usage: ${usedLibraries.join(', ')}`);
 
     // Create libraries directory
     if (!fs.existsSync(librariesDestPath)) {
@@ -468,12 +498,23 @@ class WorkspaceManager {
     for (const filePath of files) {
       const content = fs.readFileSync(filePath, 'utf8');
       
-      // Look for imports from './libraries/' or '../libraries/'
-      const importRegex = /import\s+.*?\s+from\s+['"`]\.\.?\/libraries\/([^\/]+)\/[^'"`]*['"`]/g;
-      let match;
+      // Look for imports from './libraries/' or '../libraries/' or 'libraries/'
+      // Supports multiple patterns:
+      // import { func } from './libraries/math/utils'
+      // import { func } from '../libraries/math/utils'  
+      // import { func } from 'libraries/math/utils'
+      // import { func } from '@workspace/math'
+      const importPatterns = [
+        /import\s+.*?\s+from\s+['"`]\.\.?\/libraries\/([^\/]+)\/[^'"`]*['"`]/g,
+        /import\s+.*?\s+from\s+['"`]libraries\/([^\/]+)\/[^'"`]*['"`]/g,
+        /import\s+.*?\s+from\s+['"`]@workspace\/([^'"`]+)['"`]/g
+      ];
       
-      while ((match = importRegex.exec(content)) !== null) {
-        usedLibraries.add(match[1]);
+      for (const regex of importPatterns) {
+        let match;
+        while ((match = regex.exec(content)) !== null) {
+          usedLibraries.add(match[1]);
+        }
       }
     }
     
@@ -501,6 +542,41 @@ class WorkspaceManager {
     }
     
     return files;
+  }
+
+  async createProjectTsConfig(projectPath) {
+    const tsconfigPath = path.join(projectPath, 'tsconfig.json');
+    
+    // Create tsconfig.json for VS Code IntelliSense
+    const projectTsConfig = {
+      compilerOptions: {
+        target: "ES2020",
+        module: "ES2020",
+        moduleResolution: "Node",
+        strict: false,
+        skipLibCheck: true,
+        skipDefaultLibCheck: true,
+        lib: ["ES2020", "DOM"],
+        baseUrl: ".",
+        paths: {
+          "libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
+          "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
+        }
+      },
+      include: [
+        "behavior_pack/tscripts/**/*",
+        "behavior_pack/typescripts/**/*",
+        path.relative(projectPath, path.join(this.librariesDir, "**/*")).replace(/\\/g, '/')
+      ],
+      exclude: [
+        "node_modules",
+        "behavior_pack/scripts",
+        "**/*.temp.json"
+      ]
+    };
+
+    fs.writeFileSync(tsconfigPath, JSON.stringify(projectTsConfig, null, 2));
+    console.log('Created/updated tsconfig.json for VS Code IntelliSense');
   }
 
   async syncLibraries(projectPath) {

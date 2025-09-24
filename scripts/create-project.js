@@ -162,7 +162,7 @@ console.log("${projectName} behavior pack loaded!");`;
     version: "2.0.0",
     tasks: [
       {
-        label: "Start Minecraft Project",
+        label: "Auto Build",
         type: "shell",
         command: "node",
         args: [
@@ -207,7 +207,7 @@ console.log("${projectName} behavior pack loaded!");`;
         ]
       },
       {
-        label: "Stop Minecraft Project",
+        label: "Stop Auto Build",
         type: "shell",
         command: "taskkill",
         args: [
@@ -292,7 +292,7 @@ console.log("${projectName} behavior pack loaded!");`;
   console.log('\n🚀 Next steps:');
   console.log(`1. cd projects/${projectName}`);
   console.log('2. code .');
-  console.log('3. Press Ctrl+Shift+P → "Tasks: Run Task" → "Start Minecraft Project"');
+  console.log('3. Press Ctrl+Shift+P → "Tasks: Run Task" → "Auto Build"');
   
   if (projectType === 'ts') {
     console.log(`4. Edit behavior_pack/tscripts/main.ts`);
