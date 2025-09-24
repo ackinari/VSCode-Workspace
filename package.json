@@ -1,0 +1,41 @@
+{
+  "name": "minecraft-bedrock-workspace",
+  "version": "1.0.0",
+  "description": "A modular workspace for Minecraft Bedrock development with TypeScript support and automatic library management",
+  "main": "eslint/workspace-manager.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "postinstall": "node setup.js",
+    "start-current": "node eslint/workspace-manager.js start-current",
+    "build-current": "node eslint/workspace-manager.js build-current",
+    "debug": "node eslint/workspace-manager.js debug",
+    "list-projects": "node eslint/workspace-manager.js list",
+    "list-libraries": "node eslint/workspace-manager.js list-libraries",
+    "create-project": "node scripts/create-project.js",
+    "create-library": "node scripts/create-library.js"
+  },
+  "keywords": [
+    "minecraft",
+    "bedrock",
+    "typescript",
+    "javascript",
+    "workspace",
+    "development",
+    "automation"
+  ],
+  "author": "Minecraft Bedrock Developer",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/minecraft-bedrock-workspace.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/minecraft-bedrock-workspace/issues"
+  },
+  "homepage": "https://github.com/your-username/minecraft-bedrock-workspace#readme",
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

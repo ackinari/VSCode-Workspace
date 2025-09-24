@@ -1,0 +1,102 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Minecraft Project",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "../../eslint/workspace-manager.js",
+        "start-current"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "isBackground": true,
+      "runOptions": {
+        "runOn": "default"
+      }
+    },
+    {
+      "label": "Build Project Once",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "../../eslint/workspace-manager.js",
+        "build-current"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
+    },
+    {
+      "label": "Stop Minecraft Project",
+      "type": "shell",
+      "command": "taskkill",
+      "args": [
+        "/F",
+        "/IM",
+        "node.exe"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Debug Project Info",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "../../eslint/workspace-manager.js",
+        "debug"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "List Available Libraries",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "../../eslint/workspace-manager.js",
+        "list-libraries"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

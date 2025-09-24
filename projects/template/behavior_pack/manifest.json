@@ -1,0 +1,26 @@
+{
+  "format_version": 2,
+  "header": {
+    "name": "Mob Fusion",
+    "description": "Mob Fusion Behavior Pack",
+    "uuid": "9a64cff4-02bf-49a7-9024-2ce51bca67f1",
+    "version": [1, 0, 0],
+    "min_engine_version": [1, 21, 100]
+  },
+  "modules": [
+    {
+      "description": "Script resources",
+      "language": "javascript",
+      "type": "script",
+      "uuid": "e99f68a7-9cf1-41d4-8e0d-78e94f7a170b",
+      "version": [1, 0, 0],
+      "entry": "scripts/main.js"
+    }
+  ],
+  "dependencies": [
+    {
+      "module_name": "@minecraft/server",
+      "version": [2, 1, 0]
+    }
+  ]
+}

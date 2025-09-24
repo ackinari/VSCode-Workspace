@@ -1,0 +1,48 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Temporary files
+*.temp.json
+tsconfig.temp.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Build outputs
+dist/
+build/
+lib/
+
+# Minecraft development folders (these are synced automatically)
+development_behavior_packs/
+development_resource_packs/
+
+# Project specific ignores
+projects/*/behavior_pack/scripts/*.js
+projects/*/behavior_pack/scripts/*.js.map

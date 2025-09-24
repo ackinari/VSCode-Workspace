@@ -1,0 +1,204 @@
+{
+  "dataType": 1,
+  "variants": {},
+  "storageBasePath": "",
+  "contentsModified": "2025-09-24T16:00:15.172Z",
+  "dataStorageRelativePath": "/test/",
+  "editPreference": 0,
+  "name": "test",
+  "title": "test",
+  "description": "TypeScript Starter",
+  "defaultBehaviorPackUniqueId": "9a64cff4-02bf-49a7-9024-2ce51bca67f0",
+  "defaultResourcePackUniqueId": "364e9d59-a377-40b7-b073-6f04af6d7a2c",
+  "defaultScriptModuleUniqueId": "e99f68a7-9cf1-41d4-8e0d-78e94f7a170a",
+  "defaultDataUniqueId": "932b3eba-c1b7-47f8-a34c-94a0b9d206e3",
+  "focus": 0,
+  "items": [
+    {
+      "itemType": 59,
+      "variants": {},
+      "projectPath": "/package.json",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "package.json",
+      "isInWorld": false
+    },
+    {
+      "itemType": 58,
+      "variants": {},
+      "projectPath": "/tsconfig.json",
+      "storageType": 0,
+      "creationType": 0,
+      "tags": [],
+      "name": "tsconfig.json",
+      "isInWorld": false
+    },
+    {
+      "itemType": 109,
+      "variants": {},
+      "projectPath": "/behavior_packs/lb/",
+      "storageType": 1,
+      "creationType": 0,
+      "tags": [],
+      "name": "starter"
+    },
+    {
+      "itemType": 5,
+      "variants": {},
+      "projectPath": "/behavior_packs/lb/manifest.json",
+      "storageType": 0,
+      "creationType": 0,
+      "tags": [
+        "behaviorpackmanifest"
+      ],
+      "name": "manifest.json",
+      "isInWorld": false
+    },
+    {
+      "itemType": 103,
+      "variants": {},
+      "projectPath": "/behavior_packs/lb/pack_icon.png",
+      "storageType": 0,
+      "creationType": 0,
+      "tags": [],
+      "name": "pack_icon.png",
+      "isInWorld": false
+    },
+    {
+      "itemType": 110,
+      "variants": {},
+      "projectPath": "/resource_packs/lb/",
+      "storageType": 1,
+      "creationType": 0,
+      "tags": [],
+      "name": "starter"
+    },
+    {
+      "itemType": 14,
+      "variants": {},
+      "projectPath": "/resource_packs/lb/manifest.json",
+      "storageType": 0,
+      "creationType": 0,
+      "tags": [
+        "resourcepackmanifest"
+      ],
+      "name": "manifest.json",
+      "isInWorld": false
+    },
+    {
+      "itemType": 103,
+      "variants": {},
+      "projectPath": "/resource_packs/lb/pack_icon.png",
+      "storageType": 0,
+      "creationType": 0,
+      "tags": [],
+      "name": "pack_icon.png",
+      "isInWorld": false
+    },
+    {
+      "itemType": 13,
+      "variants": {},
+      "projectPath": "/scripts/main.ts",
+      "storageType": 0,
+      "creationType": 0,
+      "tags": [],
+      "name": "main.ts",
+      "isInWorld": false
+    },
+    {
+      "itemType": 121,
+      "variants": {},
+      "projectPath": "/.env",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": ".env"
+    },
+    {
+      "itemType": 122,
+      "variants": {},
+      "projectPath": "/.prettierrc.json",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": ".prettierrc.json"
+    },
+    {
+      "itemType": 119,
+      "variants": {},
+      "projectPath": "/just.config.ts",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "just.config.ts"
+    },
+    {
+      "itemType": 120,
+      "variants": {},
+      "projectPath": "/eslint.config.mjs",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "eslint.config.mjs"
+    },
+    {
+      "itemType": 75,
+      "variants": {},
+      "projectPath": "/.vscode/launch.json",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "launch.json"
+    },
+    {
+      "itemType": 77,
+      "variants": {},
+      "projectPath": "/.vscode/settings.json",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "settings.json"
+    },
+    {
+      "itemType": 76,
+      "variants": {},
+      "projectPath": "/.vscode/tasks.json",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "tasks.json"
+    },
+    {
+      "itemType": 78,
+      "variants": {},
+      "projectPath": "/.vscode/extensions.json",
+      "storageType": 0,
+      "creationType": 1,
+      "tags": [],
+      "name": "extensions.json"
+    }
+  ],
+  "projectFolderTitle": "web",
+  "originalGitHubOwner": "microsoft",
+  "originalGitHubRepoName": "minecraft-scripting-samples",
+  "originalGitHubFolder": "/ts-starter",
+  "originalGalleryId": "tsStarter",
+  "creator": "aKiNaRi",
+  "shortName": "lb",
+  "defaultBehaviorPackVersion": [
+    1,
+    0,
+    0
+  ],
+  "versionMajor": 1,
+  "versionMinor": 0,
+  "versionPatch": 0,
+  "defaultResourcePackVersion": [
+    1,
+    0,
+    0
+  ],
+  "collapsedStoragePaths": [],
+  "gitHubReferences": []
+}
