@@ -1,7 +1,7 @@
 {
-  "name": "mob-fusion",
+  "name": "template",
   "version": "1.0.0",
-  "description": "Mob Fusion Minecraft Bedrock Project",
+  "description": "Template Minecraft Bedrock Project",
   "private": true,
   "dependencies": {
     "@minecraft/math": "^2.2.7",
