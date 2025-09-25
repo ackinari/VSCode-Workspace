@@ -22,11 +22,7 @@
     "**/.DS_Store": true,
     "**/node_modules": true
   },
-  "cSpell.words": [
-    "gametest",
-    "gametests",
-    "mcaddon"
-  ],
-  "editor.tabSize": 2,
+  "cSpell.words": ["gametest", "gametests", "mcaddon"],
+  "editor.tabSize": 4,
   "eslint.useFlatConfig": true
 }

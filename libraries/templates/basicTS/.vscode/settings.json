@@ -1,0 +1,31 @@
+{
+    "[javascript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "git.ignoreLimitWarning": true,
+    "editor.formatOnSave": true,
+    "search.exclude": {
+        "**/.git": true,
+        "**/node_modules": true
+    },
+    "files.exclude": {
+        "**/package.json": true,
+        "**/package-lock.json": true,
+        "**/tsconfig.json": true,
+
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true
+    },
+    "editor.tabSize": 4,
+    "eslint.useFlatConfig": true
+}
