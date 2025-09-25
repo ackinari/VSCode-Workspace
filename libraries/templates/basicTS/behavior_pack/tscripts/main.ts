@@ -1,6 +1,3 @@
-import { world } from "@minecraft/server";
-world.sendMessage('batata');
+import { world, system } from "@minecraft/server";
 
-import { clamp } from '@workspace/maths';
-
-const health = clamp(0, 0, 100);
+console.log("[Script] Loaded!");
