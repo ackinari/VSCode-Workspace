@@ -34,10 +34,11 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 
-# Build outputs
-dist/
-build/
-lib/
+# Projects
+projects/
+
+# Others
+TODO.md
 
 # Minecraft development folders (these are synced automatically)
 development_behavior_packs/
