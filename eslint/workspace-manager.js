@@ -334,14 +334,23 @@ class WorkspaceManager {
     const sourceItems = fs.existsSync(source) ? fs.readdirSync(source) : [];
     const destItems = fs.existsSync(destination) ? fs.readdirSync(destination) : [];
 
+    let syncedFiles = 0;
+    let skippedFiles = 0;
+
     // Remove files that no longer exist in source, but preserve certain directories
     for (const destItem of destItems) {
       if (!sourceItems.includes(destItem) && !preserveDirs.includes(destItem)) {
         const destPath = path.join(destination, destItem);
-        if (fs.statSync(destPath).isDirectory()) {
-          this.removeDirectory(destPath);
-        } else {
-          fs.unlinkSync(destPath);
+        try {
+          if (fs.statSync(destPath).isDirectory()) {
+            this.removeDirectory(destPath);
+            console.log(`Removed directory: ${destItem}`);
+          } else {
+            fs.unlinkSync(destPath);
+            console.log(`Removed file: ${destItem}`);
+          }
+        } catch (error) {
+          console.warn(`Failed to remove ${destItem}: ${error.message}`);
         }
       }
     }
@@ -351,7 +360,13 @@ class WorkspaceManager {
       const sourcePath = path.join(source, item);
       const destPath = path.join(destination, item);
       
-      const stat = fs.statSync(sourcePath);
+      let stat;
+      try {
+        stat = fs.statSync(sourcePath);
+      } catch (error) {
+        console.warn(`Failed to stat ${sourcePath}: ${error.message}`);
+        continue;
+      }
       
       if (stat.isDirectory()) {
         // Skip excluded directories
@@ -361,23 +376,55 @@ class WorkspaceManager {
         
         await this.smartSync(sourcePath, destPath, excludeDirs);
       } else {
-        // Skip .map files
-        if (item.endsWith('.map')) {
+        // Skip .map files and temporary files
+        if (item.endsWith('.map') || item.endsWith('.temp.json') || item.startsWith('.')) {
           continue;
         }
         
-        // Only copy if file doesn't exist or is different
-        let shouldCopy = true;
-        if (fs.existsSync(destPath)) {
-          const sourceStats = fs.statSync(sourcePath);
-          const destStats = fs.statSync(destPath);
-          shouldCopy = sourceStats.mtime > destStats.mtime || sourceStats.size !== destStats.size;
+        // Enhanced file comparison for better performance
+        let shouldCopy = false;
+        
+        if (!fs.existsSync(destPath)) {
+          shouldCopy = true;
+        } else {
+          try {
+            const sourceStats = stat;
+            const destStats = fs.statSync(destPath);
+            
+            // Compare size first (fastest check)
+            if (sourceStats.size !== destStats.size) {
+              shouldCopy = true;
+            } else {
+              // Only check modification time if sizes are equal
+              const sourceMtime = Math.floor(sourceStats.mtime.getTime() / 1000);
+              const destMtime = Math.floor(destStats.mtime.getTime() / 1000);
+              
+              if (sourceMtime > destMtime) {
+                shouldCopy = true;
+              }
+            }
+          } catch (error) {
+            // If we can't stat the destination, copy the file
+            shouldCopy = true;
+          }
         }
         
         if (shouldCopy) {
-          fs.copyFileSync(sourcePath, destPath);
+          try {
+            fs.copyFileSync(sourcePath, destPath);
+            syncedFiles++;
+          } catch (error) {
+            console.warn(`Failed to copy ${item}: ${error.message}`);
+          }
+        } else {
+          skippedFiles++;
         }
       }
+    }
+
+    // Only log summary for large operations
+    if (syncedFiles > 0 || skippedFiles > 10) {
+      console.log(`Sync summary: ${syncedFiles} files updated, ${skippedFiles} files skipped (unchanged)`);
     }
   }
 
@@ -642,22 +689,28 @@ class WorkspaceManager {
     for (const filePath of files) {
       const content = fs.readFileSync(filePath, 'utf8');
       
-      // Look for imports from './libraries/' or '../libraries/' or 'libraries/'
+      // Look for imports from libraries
       // Supports multiple patterns:
       // import { func } from './libraries/math/utils'
       // import { func } from '../libraries/math/utils'  
       // import { func } from 'libraries/math/utils'
+      // import { func } from 'libraries/math'  <- This pattern was missing
       // import { func } from '@workspace/math'
       const importPatterns = [
-        /import\s+.*?\s+from\s+['"`]\.\.?\/libraries\/([^\/]+)\/[^'"`]*['"`]/g,
-        /import\s+.*?\s+from\s+['"`]libraries\/([^\/]+)\/[^'"`]*['"`]/g,
+        // Relative paths with subpaths
+        /import\s+.*?\s+from\s+['"`]\.\.?\/libraries\/([^\/'"]+)(?:\/[^'"`]*)?['"`]/g,
+        // Direct libraries path with optional subpaths
+        /import\s+.*?\s+from\s+['"`]libraries\/([^\/'"]+)(?:\/[^'"`]*)?['"`]/g,
+        // @workspace pattern
         /import\s+.*?\s+from\s+['"`]@workspace\/([^'"`]+)['"`]/g
       ];
       
       for (const regex of importPatterns) {
         let match;
         while ((match = regex.exec(content)) !== null) {
-          usedLibraries.add(match[1]);
+          const libraryName = match[1];
+          usedLibraries.add(libraryName);
+          console.log(`Detected library import: ${libraryName} in ${path.basename(filePath)}`);
         }
       }
     }
