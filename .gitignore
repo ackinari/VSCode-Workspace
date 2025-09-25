@@ -15,10 +15,6 @@ tsconfig.temp.json
 ehthumbs.db
 Thumbs.db
 
-# IDE files
-.vscode/settings.json
-.idea/
-
 # Logs
 *.log
 npm-debug.log*
@@ -34,16 +30,8 @@ pids
 # Coverage directory used by tools like istanbul
 coverage/
 
-# Projects
-projects/
-
 # Others
 TODO.md
 
-# Minecraft development folders (these are synced automatically)
-development_behavior_packs/
-development_resource_packs/
-
-# Project specific ignores
-projects/*/behavior_pack/scripts/*.js
-projects/*/behavior_pack/scripts/*.js.map
+# Project
+projects/*
