@@ -233,7 +233,7 @@ class WorkspaceManager {
             strict: false,
             noImplicitAny: false,
             outDir: outputDir,
-            rootDir: sourceDir,
+            // Remove rootDir to allow files from different directories
             skipLibCheck: true,
             skipDefaultLibCheck: true,
             noResolve: false,
@@ -241,17 +241,21 @@ class WorkspaceManager {
             types: [],
             lib: ["ES2020", "DOM"],
             moduleDetection: "force",
-            baseUrl: ".",
+            baseUrl: projectPath,
             paths: {
               "libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
               "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
             }
           },
           include: [
-            path.join(sourceDir, "**/*"),
-            path.relative(projectPath, path.join(this.librariesDir, "**/*")).replace(/\\/g, '/')
+            path.relative(projectPath, path.join(sourceDir, "**/*")).replace(/\\/g, '/')
           ],
-          exclude: ["node_modules", "**/*.d.ts", "**/node_modules/**"]
+          exclude: [
+            "node_modules", 
+            "**/*.d.ts", 
+            "**/node_modules/**",
+            "libraries/templates/**/*"
+          ]
         };
 
         const tempTsConfigPath = path.join(projectPath, 'tsconfig.temp.json');
@@ -705,13 +709,13 @@ class WorkspaceManager {
       },
       include: [
         "behavior_pack/tscripts/**/*",
-        "behavior_pack/typescripts/**/*",
-        path.relative(projectPath, path.join(this.librariesDir, "**/*")).replace(/\\/g, '/')
+        "behavior_pack/typescripts/**/*"
       ],
       exclude: [
         "node_modules",
         "behavior_pack/scripts",
-        "**/*.temp.json"
+        "**/*.temp.json",
+        "libraries/templates/**/*"
       ]
     };
 
