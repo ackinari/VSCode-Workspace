@@ -267,6 +267,10 @@ class WorkspaceManager {
             stdio: 'inherit'
           });
           console.log('TypeScript compiled successfully to development folder');
+          
+          // Post-process compiled JavaScript files to fix library imports
+          await this.fixLibraryImports(outputDir);
+          
         } catch (tscError) {
           console.error('TypeScript compilation failed. Check your code for errors.');
           console.error('Error details:', tscError.message);
@@ -675,6 +679,57 @@ class WorkspaceManager {
     }
     
     console.log(`Synced libraries to development: ${usedLibraries.join(', ')}`);
+  }
+
+  async fixLibraryImports(outputDir) {
+    if (!fs.existsSync(outputDir)) {
+      return;
+    }
+
+    const jsFiles = this.getAllFiles(outputDir, ['.js']);
+    let fixedFiles = 0;
+
+    for (const filePath of jsFiles) {
+      let content = fs.readFileSync(filePath, 'utf8');
+      let modified = false;
+
+      // Fix library imports to use relative paths
+      // Convert: from "libraries/debugs" -> from "./libraries/debugs"
+      // Convert: from "libraries/maths/clamp" -> from "./libraries/maths/clamp"
+      // Convert: from "@workspace/debugs" -> from "./libraries/debugs"
+      
+      const importFixPatterns = [
+        // Fix direct libraries imports
+        {
+          pattern: /from\s+['"`]libraries\/([^'"`]+)['"`]/g,
+          replacement: 'from "./libraries/$1"'
+        },
+        // Fix @workspace imports
+        {
+          pattern: /from\s+['"`]@workspace\/([^'"`]+)['"`]/g,
+          replacement: 'from "./libraries/$1"'
+        }
+      ];
+
+      for (const { pattern, replacement } of importFixPatterns) {
+        const originalContent = content;
+        content = content.replace(pattern, replacement);
+        
+        if (content !== originalContent) {
+          modified = true;
+        }
+      }
+
+      if (modified) {
+        fs.writeFileSync(filePath, content, 'utf8');
+        fixedFiles++;
+        console.log(`Fixed library imports in: ${path.basename(filePath)}`);
+      }
+    }
+
+    if (fixedFiles > 0) {
+      console.log(`Fixed library imports in ${fixedFiles} JavaScript files`);
+    }
   }
 
   async detectLibraryUsage(sourceDir) {
