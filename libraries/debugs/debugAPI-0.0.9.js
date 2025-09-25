@@ -1121,4 +1121,4 @@ export class DebugAPI {
         }
     }
 }
-export let clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+let clamp = (value, min, max) => Math.min(Math.max(value, min), max)
