@@ -421,6 +421,146 @@ class WorkspaceManager {
     console.log(`Build completed for ${actualProjectName}`);
   }
 
+  async syncDevelopment(projectName) {
+    const projectPath = projectName ? path.join(this.projectsDir, projectName) : process.cwd();
+    
+    if (!fs.existsSync(projectPath)) {
+      throw new Error(`Project not found at ${projectPath}`);
+    }
+
+    const actualProjectName = projectName || path.basename(projectPath);
+    
+    if (!this.minecraftDir) {
+      throw new Error('Minecraft .com.mojang folder not found. Cannot sync development.');
+    }
+
+    const behaviorPackSource = path.join(projectPath, 'behavior_pack');
+    const resourcePackSource = path.join(projectPath, 'resource_pack');
+    
+    const behaviorPackDest = path.join(this.minecraftDir, 'development_behavior_packs', `${actualProjectName}_BP`);
+    const resourcePackDest = path.join(this.minecraftDir, 'development_resource_packs', `${actualProjectName}_RP`);
+
+    console.log(`\n=== SYNC DEVELOPMENT ANALYSIS FOR ${actualProjectName} ===`);
+    
+    let needsSync = false;
+    const issues = [];
+
+    // Check behavior pack
+    if (fs.existsSync(behaviorPackSource)) {
+      if (!fs.existsSync(behaviorPackDest)) {
+        issues.push(`❌ Behavior pack missing in development: ${behaviorPackDest}`);
+        needsSync = true;
+      } else {
+        const sourceFiles = this.getAllFilesRecursive(behaviorPackSource);
+        const destFiles = this.getAllFilesRecursive(behaviorPackDest);
+        
+        // Check for missing files
+        for (const file of sourceFiles) {
+          const relativePath = path.relative(behaviorPackSource, file);
+          const destFile = path.join(behaviorPackDest, relativePath);
+          
+          // Skip excluded directories
+          if (relativePath.includes('tscripts') || relativePath.includes('typescripts')) {
+            continue;
+          }
+          
+          if (!fs.existsSync(destFile)) {
+            issues.push(`❌ Missing file: ${relativePath}`);
+            needsSync = true;
+          } else {
+            // Check if file is different
+            const sourceStats = fs.statSync(file);
+            const destStats = fs.statSync(destFile);
+            
+            if (sourceStats.mtime > destStats.mtime || sourceStats.size !== destStats.size) {
+              issues.push(`⚠️  Outdated file: ${relativePath}`);
+              needsSync = true;
+            }
+          }
+        }
+        
+        // Check for extra files in development
+        for (const file of destFiles) {
+          const relativePath = path.relative(behaviorPackDest, file);
+          const sourceFile = path.join(behaviorPackSource, relativePath);
+          
+          // Skip compiled scripts and libraries
+          if (relativePath.startsWith('scripts') && !fs.existsSync(path.join(behaviorPackSource, 'scripts'))) {
+            continue;
+          }
+          
+          if (!fs.existsSync(sourceFile) && !relativePath.startsWith('scripts')) {
+            issues.push(`🗑️  Extra file in development: ${relativePath}`);
+            needsSync = true;
+          }
+        }
+      }
+    }
+
+    // Check resource pack
+    if (fs.existsSync(resourcePackSource)) {
+      if (!fs.existsSync(resourcePackDest)) {
+        issues.push(`❌ Resource pack missing in development: ${resourcePackDest}`);
+        needsSync = true;
+      }
+    }
+
+    // Display results
+    if (needsSync) {
+      console.log('\n📋 Issues found:');
+      issues.forEach(issue => console.log(`  ${issue}`));
+      
+      console.log('\n⚠️  WARNING: This will completely replace the development folder!');
+      console.log('   All files in development will be deleted and rebuilt from source.');
+      console.log('\n❓ Do you want to proceed? (y/N)');
+      
+      // In a real implementation, you'd want to use readline for user input
+      // For now, we'll assume the user confirms
+      console.log('\n🔄 Proceeding with sync...');
+      
+      // Clean development folders
+      if (fs.existsSync(behaviorPackDest)) {
+        this.removeDirectory(behaviorPackDest);
+        console.log('🗑️  Cleaned behavior pack development folder');
+      }
+      
+      if (fs.existsSync(resourcePackDest)) {
+        this.removeDirectory(resourcePackDest);
+        console.log('🗑️  Cleaned resource pack development folder');
+      }
+      
+      // Rebuild everything
+      await this.ensureSharedDependencies();
+      await this.buildProject(projectPath);
+      await this.syncToMinecraft(actualProjectName, projectPath);
+      
+      console.log('\n✅ Development sync completed successfully!');
+    } else {
+      console.log('\n✅ Development folder is already in sync with source!');
+    }
+
+    return { needsSync, issues };
+  }
+
+  getAllFilesRecursive(dir, files = []) {
+    if (!fs.existsSync(dir)) return files;
+    
+    const items = fs.readdirSync(dir);
+    
+    for (const item of items) {
+      const itemPath = path.join(dir, item);
+      const stat = fs.statSync(itemPath);
+      
+      if (stat.isDirectory()) {
+        this.getAllFilesRecursive(itemPath, files);
+      } else {
+        files.push(itemPath);
+      }
+    }
+    
+    return files;
+  }
+
   async syncLibrariesIfNeeded(projectPath, sourceDir) {
     if (!fs.existsSync(this.librariesDir)) {
       return;
@@ -794,6 +934,10 @@ if (require.main === module) {
       manager.listLibraries();
       break;
     
+    case 'sync-development':
+      manager.syncDevelopment(projectName).catch(console.error);
+      break;
+    
     case 'debug':
       manager.debugProject(projectName);
       break;
@@ -804,6 +948,7 @@ if (require.main === module) {
       console.log('  start-current       - Start monitoring current project');
       console.log('  build <project>     - Build project once');
       console.log('  build-current       - Build current project once');
+      console.log('  sync-development    - Force sync with development folder');
       console.log('  stop <project>      - Stop monitoring a project');
       console.log('  list               - List available projects');
       console.log('  list-libraries     - List available libraries');

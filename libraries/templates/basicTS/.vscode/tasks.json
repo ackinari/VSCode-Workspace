@@ -40,11 +40,30 @@
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
+        "panel": "shared",
+        "close": true
       },
       "problemMatcher": [
         "$tsc"
       ]
+    },
+    {
+      "label": "Sync Development",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "../../eslint/workspace-manager.js",
+        "sync-development"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
     },
     {
       "label": "Stop Auto Build",
@@ -60,7 +79,8 @@
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
+        "panel": "shared",
+        "close": true
       },
       "problemMatcher": []
     },
@@ -77,7 +97,8 @@
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
+        "panel": "shared",
+        "close": true
       },
       "problemMatcher": []
     },
@@ -94,7 +115,25 @@
         "echo": true,
         "reveal": "always",
         "focus": false,
-        "panel": "shared"
+        "panel": "shared",
+        "close": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "New Project",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "../../eslint/scripts/new-project.js"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "close": true
       },
       "problemMatcher": []
     }
