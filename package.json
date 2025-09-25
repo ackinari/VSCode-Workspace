@@ -23,16 +23,16 @@
     "development",
     "automation"
   ],
-  "author": "Minecraft Bedrock Developer",
+  "author": "aKiNaRi",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/minecraft-bedrock-workspace.git"
+    "url": "https://github.com/ackinari/VSCode-Workspace.git"
   },
   "bugs": {
-    "url": "https://github.com/your-username/minecraft-bedrock-workspace/issues"
+    "url": "https://github.com/ackinari/VSCode-Workspace/issues"
   },
-  "homepage": "https://github.com/your-username/minecraft-bedrock-workspace#readme",
+  "homepage": "https://github.com/ackinari/VSCode-Workspace",
   "engines": {
     "node": ">=16.0.0"
   },
