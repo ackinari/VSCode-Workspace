@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        //? important
+        //? = = = important = = =
         "target": "es6",
         "moduleResolution": "Node",
         "module": "ES2020",
@@ -12,7 +12,7 @@
         // "sourceMap": true,
         "pretty": true,
 
-        //? user preferences
+        //? = = = user preferences = = =
         // "forceConsistentCasingInFileNames": true,
         "strict": true,
         // "allowUnreachableCode": true, //*
@@ -27,7 +27,7 @@
         "allowJs": true,
         // "checkJs": false, //*
 
-        //? others
+        //? = = = others = = =
         // "outDir": "lib",
         // "rootDir": ".",
         // "baseUrl": "behavior_packs/",

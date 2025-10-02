@@ -1,46 +1,56 @@
 {
-  "name": "minecraft-bedrock-workspace",
-  "version": "1.0.0",
-  "description": "A modular workspace for Minecraft Bedrock development with TypeScript support and automatic library management",
-  "main": "eslint/workspace-manager.js",
-  "scripts": {
-    "start-current": "node eslint/workspace-manager.js start-current",
-    "start-typescript": "node eslint/workspace-manager.js start-typescript",
-    "build-current": "node eslint/workspace-manager.js build-current",
-    "build-typescript": "node eslint/workspace-manager.js build-typescript",
-    "build-script": "node eslint/workspace-manager.js build-script-current",
-    "build-priority": "node eslint/workspace-manager.js build-priority-current",
-    "sync-development": "node eslint/workspace-manager.js sync-development",
-    "debug": "node eslint/workspace-manager.js debug",
-    "list-projects": "node eslint/workspace-manager.js list",
-    "list-libraries": "node eslint/workspace-manager.js list-libraries",
-    "create-project": "node eslint/scripts/create-project.js",
-    "create-library": "node eslint/scripts/create-library.js",
-    "new-project": "node eslint/scripts/new-project.js",
-    "generate-types": "node eslint/scripts/generate-library-types.js"
-  },
-  "keywords": [
-    "minecraft",
-    "bedrock",
-    "typescript",
-    "javascript",
-    "workspace",
-    "development",
-    "automation"
-  ],
-  "author": "aKiNaRi",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ackinari/VSCode-Workspace.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ackinari/VSCode-Workspace/issues"
-  },
-  "homepage": "https://github.com/ackinari/VSCode-Workspace",
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "devDependencies": {},
-  "dependencies": {}
+    "name": "minecraft-bedrock-workspace",
+    "version": "1.0.0",
+    "description": "A modular workspace for Minecraft Bedrock development with TypeScript support",
+    "author": "aKiNaRi",
+    "license": "MIT",
+    "main": "eslint/workspace-manager.js",
+    "scripts": {
+        "start-current": "node eslint/workspace-manager.js start-current",
+        "start-typescript": "node eslint/workspace-manager.js start-typescript",
+        "build-current": "node eslint/workspace-manager.js build-current",
+        "build-typescript": "node eslint/workspace-manager.js build-typescript",
+        "build-script": "node eslint/workspace-manager.js build-script-current",
+        "build-priority": "node eslint/workspace-manager.js build-priority-current",
+        "sync-development": "node eslint/workspace-manager.js sync-development",
+        "debug": "node eslint/workspace-manager.js debug",
+        "list-projects": "node eslint/workspace-manager.js list",
+        "list-libraries": "node eslint/workspace-manager.js list-libraries",
+        "create-project": "node eslint/scripts/create-project.js",
+        "create-library": "node eslint/scripts/create-library.js",
+        "new-project": "node eslint/scripts/new-project.js",
+        "generate-types": "node eslint/scripts/generate-library-types.js"
+    },
+    "keywords": [
+        "minecraft",
+        "bedrock",
+        "typescript",
+        "javascript",
+        "workspace",
+        "development"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ackinari/VSCode-Workspace.git"
+    },
+    "bugs": {
+        "url": "https://github.com/ackinari/VSCode-Workspace/issues"
+    },
+    "homepage": "https://github.com/ackinari/VSCode-Workspace",
+    "engines": {
+        "node": ">=16.0.0"
+    },
+    "devDependencies": {
+        "@minecraft/core-build-tasks": "^5.2.0",
+        "eslint-plugin-minecraft-linting": "^2.0.1",
+        "source-map": "^0.7.4",
+        "ts-node": "^10.9.1",
+        "typescript": "^5.5.4"
+    },
+    "dependencies": {
+        "@minecraft/math": "^2.2.7",
+        "@minecraft/server": "^2.0.0",
+        "@minecraft/server-ui": "^2.0.0",
+        "@minecraft/vanilla-data": "^1.21.90"
+    }
 }
