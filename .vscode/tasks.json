@@ -5,7 +5,7 @@
             "label": "Auto Build",
             "type": "shell",
             "command": "node",
-            "args": ["../../eslint/workspace-manager.js", "start-current"],
+            "args": ["../../scripts/workspace-manager.js", "start-current"],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -28,7 +28,7 @@
             "label": "Build Project Once",
             "type": "shell",
             "command": "node",
-            "args": ["../../eslint/workspace-manager.js", "build-current"],
+            "args": ["../../scripts/workspace-manager.js", "build-current"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -43,7 +43,7 @@
             "label": "Sync Development",
             "type": "shell",
             "command": "node",
-            "args": ["../../eslint/workspace-manager.js", "sync-development"],
+            "args": ["../../scripts/workspace-manager.js", "sync-development"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -73,7 +73,7 @@
             "label": "Debug Project Info",
             "type": "shell",
             "command": "node",
-            "args": ["../../eslint/workspace-manager.js", "debug"],
+            "args": ["../../scripts/workspace-manager.js", "debug"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -88,7 +88,7 @@
             "label": "List Available Libraries",
             "type": "shell",
             "command": "node",
-            "args": ["../../eslint/workspace-manager.js", "list-libraries"],
+            "args": ["../../scripts/workspace-manager.js", "list-libraries"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -103,7 +103,7 @@
             "label": "New Project",
             "type": "shell",
             "command": "node",
-            "args": ["../../eslint/scripts/new-project.js"],
+            "args": ["../../scripts/scripts/new-project.js"],
             "group": "build",
             "presentation": {
                 "echo": true,

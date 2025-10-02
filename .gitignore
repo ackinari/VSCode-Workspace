@@ -23,6 +23,7 @@ yarn-error.log*
 
 # Others
 TODO.md
+package-lock.json
 
 # Project
 projects/*
