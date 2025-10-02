@@ -1,0 +1,47 @@
+{
+    "compilerOptions": {
+      "target": "es6",
+    //   "moduleResolution": "Node",
+      "module": "es2020",
+  
+      "strict": true,
+      // "noUnusedLocals": true,
+      "noImplicitReturns": true,
+      "noUnusedParameters": true,
+  
+      "skipLibCheck": true,
+      "skipDefaultLibCheck": true,
+  
+      "noLib": false,
+      // "lib": [ "ES2024", "DOM" ],
+  
+      // "noEmit": true,
+      // "allowJs": true,
+      // "checkJs": false,
+  
+      // "baseUrl": ".",
+      "paths": {
+        "libraries/*": [
+          "../../libraries/*"
+        ],
+        "@workspace/*": [
+          "../../libraries/*"
+        ],
+        "./libraries/*": [
+          "../../libraries/*"
+        ]
+      }
+    },
+    "include": [
+      "behavior_pack/tscripts/**/*",
+      "behavior_pack/typescripts/**/*",
+      "../../libraries/**/*.js",
+      "../../libraries/**/*.d.ts"
+    ],
+    "exclude": [
+      "node_modules",
+      // "behavior_pack/scripts",
+      // "**/*.temp.json",
+      // "libraries/templates/**/*"
+    ]
+  }

@@ -4,10 +4,10 @@
   "description": "A modular workspace for Minecraft Bedrock development with TypeScript support and automatic library management",
   "main": "eslint/workspace-manager.js",
   "scripts": {
-    "setup": "node setup.js",
-    "postinstall": "node setup.js",
     "start-current": "node eslint/workspace-manager.js start-current",
+    "start-typescript": "node eslint/workspace-manager.js start-typescript",
     "build-current": "node eslint/workspace-manager.js build-current",
+    "build-typescript": "node eslint/workspace-manager.js build-typescript",
     "build-script": "node eslint/workspace-manager.js build-script-current",
     "build-priority": "node eslint/workspace-manager.js build-priority-current",
     "sync-development": "node eslint/workspace-manager.js sync-development",
