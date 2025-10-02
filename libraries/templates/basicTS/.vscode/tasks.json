@@ -2,13 +2,50 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Auto Build",
+      "label": "Auto Build: TypeScript",
       "type": "shell",
-      "command": "node",
-      "args": [
-        "../../eslint/workspace-manager.js",
-        "start-current"
-      ],
+      "command": "npm",
+      "args": ["run", "start-typescript"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "default"
+      },
+      "detail": "⚡ Auto Build: TypeScript only (continuous, fast)"
+    },
+    {
+      "label": "Auto Build: Project",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "start-current"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "default"
+      },
+      "detail": "📦 Auto Build: Full project (continuous, complete)"
+    },
+    {
+      "label": "Build: TypeScript",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build-typescript"],
       "group": {
         "kind": "build",
         "isDefault": true
@@ -22,120 +59,58 @@
         "clear": false
       },
       "problemMatcher": [],
-      "isBackground": true,
-      "runOptions": {
-        "runOn": "default"
-      }
+      "detail": "⚡ Build: TypeScript only (one-time, fast)"
     },
     {
-      "label": "Build Project Once",
+      "label": "Build: Project",
       "type": "shell",
-      "command": "node",
-      "args": [
-        "../../eslint/workspace-manager.js",
-        "build-current"
-      ],
+      "command": "npm",
+      "args": ["run", "build-current"],
       "group": "build",
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "close": true
+        "showReuseMessage": true,
+        "clear": false
       },
-      "problemMatcher": [
-        "$tsc"
-      ]
+      "problemMatcher": [],
+      "detail": "📦 Build: Full project (one-time, complete)"
     },
     {
       "label": "Sync Development",
       "type": "shell",
-      "command": "node",
-      "args": [
-        "../../eslint/workspace-manager.js",
-        "sync-development"
-      ],
+      "command": "npm",
+      "args": ["run", "sync-development"],
       "group": "build",
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "close": true
+        "showReuseMessage": true,
+        "clear": false
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "detail": "🔄 Force sync with Minecraft development folder"
     },
     {
-      "label": "Stop Auto Build",
+      "label": "Debug Project",
       "type": "shell",
-      "command": "taskkill",
-      "args": [
-        "/F",
-        "/IM",
-        "node.exe"
-      ],
-      "group": "build",
+      "command": "npm",
+      "args": ["run", "debug"],
+      "group": "test",
       "presentation": {
         "echo": true,
         "reveal": "always",
         "focus": false,
         "panel": "shared",
-        "close": true
+        "showReuseMessage": true,
+        "clear": false
       },
-      "problemMatcher": []
-    },
-    {
-      "label": "Debug Project Info",
-      "type": "shell",
-      "command": "node",
-      "args": [
-        "../../eslint/workspace-manager.js",
-        "debug"
-      ],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "close": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "List Available Libraries",
-      "type": "shell",
-      "command": "node",
-      "args": [
-        "../../eslint/workspace-manager.js",
-        "list-libraries"
-      ],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "close": true
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "New Project",
-      "type": "shell",
-      "command": "node",
-      "args": [
-        "../../eslint/scripts/new-project.js"
-      ],
-      "group": "build",
-      "presentation": {
-        "echo": true,
-        "reveal": "always",
-        "focus": false,
-        "panel": "shared",
-        "close": true
-      },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "detail": "🔍 Show debug information for current project"
     }
   ]
 }
