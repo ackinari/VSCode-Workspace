@@ -912,7 +912,7 @@ export class DebugAPI {
         const defaults = {
             maxLines: 26,
             indentSize: 4,
-            title: "§c",
+            title: "DEBUG.A",
             highlight: true,
             scroll: true,
             shiftLock: true,
