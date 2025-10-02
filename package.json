@@ -8,6 +8,8 @@
     "postinstall": "node setup.js",
     "start-current": "node eslint/workspace-manager.js start-current",
     "build-current": "node eslint/workspace-manager.js build-current",
+    "build-script": "node eslint/workspace-manager.js build-script-current",
+    "build-priority": "node eslint/workspace-manager.js build-priority-current",
     "sync-development": "node eslint/workspace-manager.js sync-development",
     "debug": "node eslint/workspace-manager.js debug",
     "list-projects": "node eslint/workspace-manager.js list",

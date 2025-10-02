@@ -476,6 +476,156 @@ class WorkspaceManager {
     console.log(`Build completed for ${actualProjectName}`);
   }
 
+  async buildScriptOnly(projectName) {
+    const projectPath = projectName ? path.join(this.projectsDir, projectName) : process.cwd();
+    
+    if (!fs.existsSync(projectPath)) {
+      throw new Error(`Project not found at ${projectPath}`);
+    }
+
+    const actualProjectName = projectName || path.basename(projectPath);
+    console.log(`Building script only (fast mode): ${actualProjectName}`);
+    
+    await this.ensureSharedDependencies();
+    
+    // Only compile TypeScript and sync libraries - skip file sync
+    const behaviorPackPath = path.join(projectPath, 'behavior_pack');
+    const tscriptsPath = path.join(behaviorPackPath, 'tscripts');
+    const typescriptsPath = path.join(behaviorPackPath, 'typescripts');
+
+    let sourceDir = null;
+    let outputDir = null;
+
+    // Check for TypeScript sources
+    if (fs.existsSync(tscriptsPath)) {
+      sourceDir = tscriptsPath;
+      outputDir = path.join(this.minecraftDir, 'development_behavior_packs', `${actualProjectName}_BP`, 'scripts');
+    } else if (fs.existsSync(typescriptsPath)) {
+      sourceDir = typescriptsPath;
+      outputDir = path.join(this.minecraftDir, 'development_behavior_packs', `${actualProjectName}_BP`, 'scripts');
+    }
+
+    if (!sourceDir) {
+      console.log('No TypeScript source found, nothing to compile');
+      return;
+    }
+
+    // Check if TypeScript folder is empty
+    const tsFiles = fs.readdirSync(sourceDir).filter(file => file.endsWith('.ts'));
+    if (tsFiles.length === 0) {
+      console.log('TypeScript folder is empty, skipping compilation');
+      return;
+    }
+
+    try {
+      if (this.minecraftDir) {
+        console.log('⚡ Fast compiling TypeScript only...');
+        
+        // Create output directory if it doesn't exist
+        if (!fs.existsSync(outputDir)) {
+          fs.mkdirSync(outputDir, { recursive: true });
+        }
+        
+        // Sync libraries first (priority)
+        await this.syncLibrariesIfNeeded(projectPath, sourceDir);
+        
+        // Create temporary tsconfig for this project
+        const tempTsConfig = {
+          compilerOptions: {
+            target: "es6",
+            moduleResolution: "Node",
+            module: "ES2020",
+            declaration: false,
+            sourceMap: false,
+            strict: false,
+            noImplicitAny: false,
+            outDir: outputDir,
+            skipLibCheck: true,
+            skipDefaultLibCheck: true,
+            noResolve: false,
+            typeRoots: [],
+            types: [],
+            lib: ["ES2020", "DOM"],
+            moduleDetection: "force",
+            baseUrl: projectPath,
+            paths: {
+              "libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
+              "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
+            }
+          },
+          include: [
+            path.relative(projectPath, path.join(sourceDir, "**/*")).replace(/\\/g, '/')
+          ],
+          exclude: [
+            "node_modules", 
+            "**/*.d.ts", 
+            "**/node_modules/**",
+            "libraries/templates/**/*"
+          ]
+        };
+
+        const tempTsConfigPath = path.join(projectPath, 'tsconfig.temp.json');
+        fs.writeFileSync(tempTsConfigPath, JSON.stringify(tempTsConfig, null, 2));
+
+        try {
+          execSync(`npx tsc --project ${tempTsConfigPath}`, { 
+            cwd: this.eslintDir, 
+            stdio: 'inherit'
+          });
+          console.log('⚡ TypeScript compiled successfully (fast mode)');
+          
+          // Post-process compiled JavaScript files to fix library imports
+          await this.fixLibraryImports(outputDir);
+          
+        } catch (tscError) {
+          console.error('TypeScript compilation failed. Check your code for errors.');
+          console.error('Error details:', tscError.message);
+        }
+
+        // Remove temporary tsconfig
+        if (fs.existsSync(tempTsConfigPath)) {
+          fs.unlinkSync(tempTsConfigPath);
+        }
+      } else {
+        console.warn('Minecraft folder not found. Cannot compile TypeScript.');
+      }
+    } catch (error) {
+      console.error('Build error:', error.message);
+    }
+    
+    console.log(`⚡ Fast script build completed for ${actualProjectName}`);
+  }
+
+  async buildWithPriority(projectName) {
+    const projectPath = projectName ? path.join(this.projectsDir, projectName) : process.cwd();
+    
+    if (!fs.existsSync(projectPath)) {
+      throw new Error(`Project not found at ${projectPath}`);
+    }
+
+    const actualProjectName = projectName || path.basename(projectPath);
+    console.log(`Building with script priority: ${actualProjectName}`);
+    
+    await this.ensureSharedDependencies();
+    
+    // First: Build script with priority (fast)
+    console.log('🚀 Phase 1: Building script with priority...');
+    await this.buildScriptOnly(actualProjectName);
+    
+    // Second: Sync other files in background (async)
+    console.log('📁 Phase 2: Syncing other files...');
+    setImmediate(async () => {
+      try {
+        await this.syncToMinecraft(actualProjectName, projectPath, true); // skipScripts = true
+        console.log('📁 Background file sync completed');
+      } catch (error) {
+        console.error('Background sync error:', error.message);
+      }
+    });
+    
+    console.log(`🚀 Priority build completed for ${actualProjectName} (files syncing in background)`);
+  }
+
   async syncDevelopment(projectName) {
     const projectPath = projectName ? path.join(this.projectsDir, projectName) : process.cwd();
     
@@ -693,31 +843,72 @@ class WorkspaceManager {
       let content = fs.readFileSync(filePath, 'utf8');
       let modified = false;
 
-      // Fix library imports to use relative paths
-      // Convert: from "libraries/debugs" -> from "./libraries/debugs"
-      // Convert: from "libraries/maths/clamp" -> from "./libraries/maths/clamp"
-      // Convert: from "@workspace/debugs" -> from "./libraries/debugs"
+      // Fix library imports to use correct relative paths with specific files
+      // Convert: from "libraries/debugs" -> from "./libraries/debugs/debugAPI-0.0.9"
+      // Convert: from "libraries/maths" -> from "./libraries/maths/clamp"
+      // Convert: from "@workspace/debugs" -> from "./libraries/debugs/debugAPI-0.0.9"
       
       const importFixPatterns = [
-        // Fix direct libraries imports
+        // Fix direct libraries imports - need to resolve to actual files
         {
-          pattern: /from\s+['"`]libraries\/([^'"`]+)['"`]/g,
-          replacement: 'from "./libraries/$1"'
+          pattern: /from\s+['"`]libraries\/([^\/'"]+)['"`]/g,
+          replacement: (match, libraryName) => {
+            return this.resolveLibraryImport(libraryName);
+          }
         },
         // Fix @workspace imports
         {
           pattern: /from\s+['"`]@workspace\/([^'"`]+)['"`]/g,
+          replacement: (match, libraryName) => {
+            return this.resolveLibraryImport(libraryName);
+          }
+        },
+        // Fix libraries with subpaths (already specific)
+        {
+          pattern: /from\s+['"`]libraries\/([^'"`]+)['"`]/g,
           replacement: 'from "./libraries/$1"'
         }
       ];
 
-      for (const { pattern, replacement } of importFixPatterns) {
-        const originalContent = content;
-        content = content.replace(pattern, replacement);
+      // Apply the first two patterns (library resolution)
+      const libraryPattern1 = /from\s+['"`]libraries\/([^\/'"]+)['"`]/g;
+      const libraryPattern2 = /from\s+['"`]@workspace\/([^'"`]+)['"`]/g;
+      
+      let match;
+      
+      // Fix direct library imports (without subpath)
+      while ((match = libraryPattern1.exec(content)) !== null) {
+        const originalImport = match[0];
+        const libraryName = match[1];
+        const resolvedImport = this.resolveLibraryImport(libraryName);
         
-        if (content !== originalContent) {
+        if (resolvedImport !== originalImport) {
+          content = content.replace(originalImport, resolvedImport);
           modified = true;
         }
+      }
+      
+      // Reset regex
+      libraryPattern1.lastIndex = 0;
+      
+      // Fix @workspace imports
+      while ((match = libraryPattern2.exec(content)) !== null) {
+        const originalImport = match[0];
+        const libraryName = match[1];
+        const resolvedImport = this.resolveLibraryImport(libraryName);
+        
+        if (resolvedImport !== originalImport) {
+          content = content.replace(originalImport, resolvedImport);
+          modified = true;
+        }
+      }
+      
+      // Fix any remaining libraries/ imports with subpaths
+      const originalContent = content;
+      content = content.replace(/from\s+['"`]libraries\/([^'"`]+)['"`]/g, 'from "./libraries/$1"');
+      
+      if (content !== originalContent) {
+        modified = true;
       }
 
       if (modified) {
@@ -730,6 +921,37 @@ class WorkspaceManager {
     if (fixedFiles > 0) {
       console.log(`Fixed library imports in ${fixedFiles} JavaScript files`);
     }
+  }
+
+  resolveLibraryImport(libraryName) {
+    const libraryPath = path.join(this.librariesDir, libraryName);
+    
+    if (!fs.existsSync(libraryPath)) {
+      console.warn(`Library not found: ${libraryName}`);
+      return `from "./libraries/${libraryName}"`;
+    }
+
+    // Check for index.js first (preferred)
+    if (fs.existsSync(path.join(libraryPath, 'index.js'))) {
+      return `from "./libraries/${libraryName}/index"`;
+    }
+
+    // Look for the main JavaScript file
+    const files = fs.readdirSync(libraryPath).filter(file => 
+      file.endsWith('.js') && !file.startsWith('index.')
+    );
+
+    if (files.length === 0) {
+      console.warn(`No JavaScript files found in library: ${libraryName}`);
+      return `from "./libraries/${libraryName}"`;
+    }
+
+    // Use the first JavaScript file found (remove .js extension)
+    const mainFile = files[0];
+    const fileName = path.basename(mainFile, '.js');
+    
+    console.log(`Resolved library ${libraryName} to file: ${fileName}`);
+    return `from "./libraries/${libraryName}/${fileName}"`;
   }
 
   async detectLibraryUsage(sourceDir) {
@@ -799,7 +1021,7 @@ class WorkspaceManager {
   async createProjectTsConfig(projectPath) {
     const tsconfigPath = path.join(projectPath, 'tsconfig.json');
     
-    // Create tsconfig.json for VS Code IntelliSense
+    // Create tsconfig.json for VS Code IntelliSense with direct file access
     const projectTsConfig = {
       compilerOptions: {
         target: "ES2020",
@@ -811,13 +1033,19 @@ class WorkspaceManager {
         lib: ["ES2020", "DOM"],
         baseUrl: ".",
         paths: {
+          // Support both folder and direct file imports
           "libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
-          "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
+          "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
+          // Direct file access patterns
+          "./libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
         }
       },
       include: [
         "behavior_pack/tscripts/**/*",
-        "behavior_pack/typescripts/**/*"
+        "behavior_pack/typescripts/**/*",
+        // Include libraries for direct imports and IntelliSense
+        path.relative(projectPath, path.join(this.librariesDir, "**/*.js")).replace(/\\/g, '/'),
+        path.relative(projectPath, path.join(this.librariesDir, "**/*.d.ts")).replace(/\\/g, '/')
       ],
       exclude: [
         "node_modules",
@@ -828,7 +1056,7 @@ class WorkspaceManager {
     };
 
     fs.writeFileSync(tsconfigPath, JSON.stringify(projectTsConfig, null, 2));
-    console.log('Created/updated tsconfig.json for VS Code IntelliSense');
+    console.log('Created/updated tsconfig.json for VS Code IntelliSense with direct file access');
   }
 
   async syncLibraries(projectPath) {
@@ -1030,6 +1258,22 @@ if (require.main === module) {
       manager.buildOnce().catch(console.error);
       break;
     
+    case 'build-script':
+      manager.buildScriptOnly(projectName).catch(console.error);
+      break;
+    
+    case 'build-script-current':
+      manager.buildScriptOnly().catch(console.error);
+      break;
+    
+    case 'build-priority':
+      manager.buildWithPriority(projectName).catch(console.error);
+      break;
+    
+    case 'build-priority-current':
+      manager.buildWithPriority().catch(console.error);
+      break;
+    
     case 'stop':
       if (!projectName) {
         console.error('Usage: node workspace-manager.js stop <project-name>');
@@ -1058,8 +1302,12 @@ if (require.main === module) {
       console.log('Available commands:');
       console.log('  start <project>     - Start monitoring a project');
       console.log('  start-current       - Start monitoring current project');
-      console.log('  build <project>     - Build project once');
-      console.log('  build-current       - Build current project once');
+      console.log('  build <project>     - Build project once (full)');
+      console.log('  build-current       - Build current project once (full)');
+      console.log('  build-script        - Build script only (fast)');
+      console.log('  build-script-current - Build current script only (fast)');
+      console.log('  build-priority      - Build with script priority + background sync');
+      console.log('  build-priority-current - Build current with script priority');
       console.log('  sync-development    - Force sync with development folder');
       console.log('  stop <project>      - Stop monitoring a project');
       console.log('  list               - List available projects');
