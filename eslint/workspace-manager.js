@@ -11,6 +11,8 @@ class WorkspaceManager {
     this.librariesDir = path.join(__dirname, '..', 'libraries');
     this.minecraftDir = this.getMinecraftDirectory();
     this.activeWatchers = new Map();
+    this.fileCache = new Map(); // Cache para otimizar verificações de arquivos
+    this.lastSyncTime = new Map(); // Cache de tempo de última sincronização
   }
 
   getMinecraftDirectory() {
@@ -80,6 +82,54 @@ class WorkspaceManager {
     console.log(`Project ${projectName} is now being monitored`);
   }
 
+  async startCurrentTypeScript() {
+    const currentDir = process.cwd();
+    const projectName = path.basename(currentDir);
+    
+    // Check if we're in a project directory
+    const behaviorPackPath = path.join(currentDir, 'behavior_pack');
+    if (!fs.existsSync(behaviorPackPath)) {
+      throw new Error('Not in a valid project directory. behavior_pack folder not found.');
+    }
+    
+    console.log(`⚡ Auto TypeScript build started: ${projectName}`);
+    
+    // Ensure shared dependencies
+    await this.ensureSharedDependencies();
+    
+    // Create/update project tsconfig for VS Code
+    await this.createProjectTsConfig(currentDir);
+    
+    // Start TypeScript-only watcher
+    this.startTypeScriptWatcher(projectName, currentDir);
+    
+    // Initial TypeScript build
+    await this.buildTypeScriptOnly(currentDir);
+    
+    console.log(`⚡ TypeScript auto-build active for ${projectName}`);
+  }
+
+  async buildCurrentTypeScript() {
+    const currentDir = process.cwd();
+    const projectName = path.basename(currentDir);
+    
+    // Check if we're in a project directory
+    const behaviorPackPath = path.join(currentDir, 'behavior_pack');
+    if (!fs.existsSync(behaviorPackPath)) {
+      throw new Error('Not in a valid project directory. behavior_pack folder not found.');
+    }
+    
+    console.log(`⚡ Building TypeScript only: ${projectName}`);
+    
+    // Ensure shared dependencies
+    await this.ensureSharedDependencies();
+    
+    // Build TypeScript only
+    await this.buildTypeScriptOnly(currentDir);
+    
+    console.log(`⚡ TypeScript build completed for ${projectName}`);
+  }
+
   async ensureSharedDependencies() {
     const eslintPackageJsonPath = path.join(this.eslintDir, 'package.json');
     const eslintNodeModulesPath = path.join(this.eslintDir, 'node_modules');
@@ -99,60 +149,108 @@ class WorkspaceManager {
       this.activeWatchers.get(projectName).close();
     }
 
-    const watchPaths = [
-      path.join(projectPath, 'behavior_pack', 'tscripts', '**', '*.ts'),
-      path.join(projectPath, 'behavior_pack', 'typescripts', '**', '*.ts'),
-      path.join(projectPath, 'behavior_pack', 'scripts', '**', '*.js'),
-      path.join(projectPath, 'behavior_pack', 'tscripts'),  // Watch folder creation
-      path.join(projectPath, 'behavior_pack', 'typescripts'), // Watch folder creation
-      path.join(projectPath, 'behavior_pack', '**', '*.{json,lang,tga,ogg,png}'),
-      path.join(projectPath, 'resource_pack', '**', '*.{json,lang,tga,ogg,png}')
-    ];
+    // Otimização: Apenas watch em diretórios que existem
+    const watchPaths = [];
+    const behaviorPackPath = path.join(projectPath, 'behavior_pack');
+    const resourcePackPath = path.join(projectPath, 'resource_pack');
+    
+    // TypeScript sources
+    const tscriptsPath = path.join(behaviorPackPath, 'tscripts');
+    const typescriptsPath = path.join(behaviorPackPath, 'typescripts');
+    const scriptsPath = path.join(behaviorPackPath, 'scripts');
+    
+    if (fs.existsSync(tscriptsPath)) {
+      watchPaths.push(path.join(tscriptsPath, '**', '*.ts'));
+    }
+    if (fs.existsSync(typescriptsPath)) {
+      watchPaths.push(path.join(typescriptsPath, '**', '*.ts'));
+    }
+    if (fs.existsSync(scriptsPath)) {
+      watchPaths.push(path.join(scriptsPath, '**', '*.js'));
+    }
+    
+    // Assets (apenas se existirem)
+    if (fs.existsSync(behaviorPackPath)) {
+      watchPaths.push(path.join(behaviorPackPath, '**', '*.{json,lang}'));
+    }
+    if (fs.existsSync(resourcePackPath)) {
+      watchPaths.push(path.join(resourcePackPath, '**', '*.{json,lang,tga,ogg,png}'));
+    }
+
+    if (watchPaths.length === 0) {
+      console.log('No valid paths to watch');
+      return;
+    }
 
     const watcher = chokidar.watch(watchPaths, {
-      ignored: [/node_modules/, /\.map$/],
-      persistent: true
+      ignored: [
+        /node_modules/, 
+        /\.map$/, 
+        /\.temp\.json$/,
+        /\.git/,
+        /\.vscode/,
+        /tsconfig\.temp\.json$/
+      ],
+      persistent: true,
+      ignoreInitial: true, // Não trigger em arquivos existentes
+      usePolling: false, // Usar eventos nativos do sistema
+      awaitWriteFinish: { // Aguardar escrita completa
+        stabilityThreshold: 100,
+        pollInterval: 50
+      }
     });
+
+    // Debounce para evitar múltiplas execuções
+    let buildTimeout = null;
+    let syncTimeout = null;
+
+    const debouncedBuild = async (filePath) => {
+      if (buildTimeout) clearTimeout(buildTimeout);
+      
+      buildTimeout = setTimeout(async () => {
+        try {
+          if (filePath.endsWith('.ts') || filePath.endsWith('.js')) {
+            await this.buildProject(projectPath);
+          }
+        } catch (error) {
+          console.error('Build error:', error.message);
+        }
+      }, 200); // 200ms debounce
+    };
+
+    const debouncedSync = async () => {
+      if (syncTimeout) clearTimeout(syncTimeout);
+      
+      syncTimeout = setTimeout(async () => {
+        try {
+          await this.syncToMinecraft(projectName, projectPath);
+        } catch (error) {
+          console.error('Sync error:', error.message);
+        }
+      }, 300); // 300ms debounce
+    };
 
     watcher.on('change', async (filePath) => {
       const relativePath = path.relative(projectPath, filePath);
-      console.log(`Changed: ${relativePath}`);
+      console.log(`📝 Changed: ${relativePath}`);
       
-      if (filePath.endsWith('.ts') || filePath.endsWith('.js')) {
-        await this.buildProject(projectPath);
-      }
-      
-      await this.syncToMinecraft(projectName, projectPath);
+      await debouncedBuild(filePath);
+      await debouncedSync();
     });
 
     watcher.on('add', async (filePath) => {
       const relativePath = path.relative(projectPath, filePath);
-      console.log(`Added: ${relativePath}`);
+      console.log(`➕ Added: ${relativePath}`);
       
-      if (filePath.endsWith('.ts') || filePath.endsWith('.js')) {
-        await this.buildProject(projectPath);
-      }
-      
-      await this.syncToMinecraft(projectName, projectPath);
-    });
-
-    watcher.on('addDir', async (dirPath) => {
-      const relativePath = path.relative(projectPath, dirPath);
-      console.log(`Directory added: ${relativePath}`);
-      
-      // Check if tscripts or typescripts folder was created
-      if (relativePath.includes('tscripts') || relativePath.includes('typescripts')) {
-        console.log('TypeScript source folder detected, rebuilding...');
-        await this.buildProject(projectPath);
-        await this.syncToMinecraft(projectName, projectPath);
-      }
+      await debouncedBuild(filePath);
+      await debouncedSync();
     });
 
     watcher.on('unlink', async (filePath) => {
       const relativePath = path.relative(projectPath, filePath);
-      console.log(`Removed: ${relativePath}`);
+      console.log(`🗑️ Removed: ${relativePath}`);
       
-      // If it's a TypeScript file, also remove the corresponding JS file
+      // Se é um arquivo TypeScript, remover o JS correspondente
       if (filePath.endsWith('.ts') && this.minecraftDir) {
         const jsFileName = path.basename(filePath, '.ts') + '.js';
         const outputDir = path.join(this.minecraftDir, 'development_behavior_packs', `${projectName}_BP`, 'scripts');
@@ -160,11 +258,19 @@ class WorkspaceManager {
         
         if (fs.existsSync(jsFilePath)) {
           fs.unlinkSync(jsFilePath);
-          console.log(`Removed compiled JS file: ${jsFileName}`);
+          console.log(`🗑️ Removed compiled JS: ${jsFileName}`);
         }
       }
       
-      await this.syncToMinecraft(projectName, projectPath);
+      await debouncedSync();
+    });
+
+    watcher.on('error', (error) => {
+      console.error('Watcher error:', error);
+    });
+
+    watcher.on('ready', () => {
+      console.log(`👁️ Watching ${watchPaths.length} paths for changes...`);
     });
 
     this.activeWatchers.set(projectName, watcher);
@@ -448,6 +554,173 @@ class WorkspaceManager {
       }
       
       fs.rmdirSync(dir);
+    }
+  }
+
+  startTypeScriptWatcher(projectName, projectPath) {
+    if (this.activeWatchers.has(projectName)) {
+      this.activeWatchers.get(projectName).close();
+    }
+
+    const behaviorPackPath = path.join(projectPath, 'behavior_pack');
+    const tscriptsPath = path.join(behaviorPackPath, 'tscripts');
+    const typescriptsPath = path.join(behaviorPackPath, 'typescripts');
+
+    // Only watch TypeScript files
+    const watchPaths = [
+      path.join(tscriptsPath, '**', '*.ts'),
+      path.join(typescriptsPath, '**', '*.ts')
+    ].filter(watchPath => {
+      const baseDir = path.dirname(watchPath.replace('**', '').replace('*.ts', ''));
+      return fs.existsSync(baseDir);
+    });
+
+    if (watchPaths.length === 0) {
+      console.log('No TypeScript directories found to watch');
+      return;
+    }
+
+    const watcher = chokidar.watch(watchPaths, {
+      ignored: [/node_modules/, /\.map$/, /\.d\.ts$/],
+      persistent: true
+    });
+
+    watcher.on('change', async (filePath) => {
+      const relativePath = path.relative(projectPath, filePath);
+      console.log(`⚡ TS Changed: ${relativePath}`);
+      await this.buildTypeScriptOnly(projectPath);
+    });
+
+    watcher.on('add', async (filePath) => {
+      const relativePath = path.relative(projectPath, filePath);
+      console.log(`⚡ TS Added: ${relativePath}`);
+      await this.buildTypeScriptOnly(projectPath);
+    });
+
+    watcher.on('unlink', async (filePath) => {
+      const relativePath = path.relative(projectPath, filePath);
+      console.log(`⚡ TS Removed: ${relativePath}`);
+      
+      // Remove corresponding JS file
+      if (this.minecraftDir) {
+        const jsFileName = path.basename(filePath, '.ts') + '.js';
+        const outputDir = path.join(this.minecraftDir, 'development_behavior_packs', `${projectName}_BP`, 'scripts');
+        const jsFilePath = path.join(outputDir, jsFileName);
+        
+        if (fs.existsSync(jsFilePath)) {
+          fs.unlinkSync(jsFilePath);
+          console.log(`⚡ Removed compiled JS: ${jsFileName}`);
+        }
+      }
+    });
+
+    this.activeWatchers.set(projectName, watcher);
+  }
+
+  async buildTypeScriptOnly(projectPath) {
+    const behaviorPackPath = path.join(projectPath, 'behavior_pack');
+    const tscriptsPath = path.join(behaviorPackPath, 'tscripts');
+    const typescriptsPath = path.join(behaviorPackPath, 'typescripts');
+    const projectName = path.basename(projectPath);
+
+    let sourceDir = null;
+    let outputDir = null;
+
+    // Check for TypeScript sources
+    if (fs.existsSync(tscriptsPath)) {
+      sourceDir = tscriptsPath;
+    } else if (fs.existsSync(typescriptsPath)) {
+      sourceDir = typescriptsPath;
+    }
+
+    if (!sourceDir) {
+      console.log('⚡ No TypeScript source found');
+      return;
+    }
+
+    // Check if TypeScript folder is empty
+    const tsFiles = fs.readdirSync(sourceDir).filter(file => file.endsWith('.ts'));
+    if (tsFiles.length === 0) {
+      console.log('⚡ TypeScript folder is empty');
+      return;
+    }
+
+    if (!this.minecraftDir) {
+      console.warn('⚡ Minecraft folder not found. Cannot compile TypeScript.');
+      return;
+    }
+
+    outputDir = path.join(this.minecraftDir, 'development_behavior_packs', `${projectName}_BP`, 'scripts');
+
+    try {
+      console.log('⚡ Compiling TypeScript...');
+      
+      // Create output directory if it doesn't exist
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      // Sync libraries first (priority)
+      await this.syncLibrariesIfNeeded(projectPath, sourceDir);
+      
+      // Create temporary tsconfig for this project
+      const tempTsConfig = {
+        compilerOptions: {
+          target: "es6",
+          moduleResolution: "Node",
+          module: "ES2020",
+          declaration: false,
+          sourceMap: false,
+          strict: false,
+          noImplicitAny: false,
+          outDir: outputDir,
+          skipLibCheck: true,
+          skipDefaultLibCheck: true,
+          noResolve: false,
+          typeRoots: [],
+          types: [],
+          lib: ["ES2020", "DOM"],
+          moduleDetection: "force",
+          baseUrl: projectPath,
+          paths: {
+            "libraries/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')],
+            "@workspace/*": [path.relative(projectPath, path.join(this.librariesDir, "*")).replace(/\\/g, '/')]
+          }
+        },
+        include: [
+          path.relative(projectPath, path.join(sourceDir, "**/*")).replace(/\\/g, '/')
+        ],
+        exclude: [
+          "node_modules", 
+          "**/*.d.ts", 
+          "**/node_modules/**",
+          "libraries/templates/**/*"
+        ]
+      };
+
+      const tempTsConfigPath = path.join(projectPath, 'tsconfig.temp.json');
+      fs.writeFileSync(tempTsConfigPath, JSON.stringify(tempTsConfig, null, 2));
+
+      try {
+        execSync(`npx tsc --project ${tempTsConfigPath}`, { 
+          cwd: this.eslintDir, 
+          stdio: 'pipe'
+        });
+        console.log('⚡ TypeScript compiled successfully');
+        
+        // Post-process compiled JavaScript files to fix library imports
+        await this.fixLibraryImports(outputDir);
+        
+      } catch (tscError) {
+        console.error('⚡ TypeScript compilation failed:', tscError.message);
+      }
+
+      // Remove temporary tsconfig
+      if (fs.existsSync(tempTsConfigPath)) {
+        fs.unlinkSync(tempTsConfigPath);
+      }
+    } catch (error) {
+      console.error('⚡ Build error:', error.message);
     }
   }
 
@@ -1250,12 +1523,20 @@ if (require.main === module) {
       manager.startCurrentProject().catch(console.error);
       break;
     
+    case 'start-typescript':
+      manager.startCurrentTypeScript().catch(console.error);
+      break;
+    
     case 'build':
       manager.buildOnce(projectName).catch(console.error);
       break;
     
     case 'build-current':
       manager.buildOnce().catch(console.error);
+      break;
+    
+    case 'build-typescript':
+      manager.buildCurrentTypeScript().catch(console.error);
       break;
     
     case 'build-script':
@@ -1300,14 +1581,25 @@ if (require.main === module) {
     
     default:
       console.log('Available commands:');
+      console.log('Available commands:');
+      console.log('');
+      console.log('Auto Build (continuous):');
+      console.log('  start-current       - Auto Build: Project (full monitoring)');
+      console.log('  start-typescript    - Auto Build: TypeScript (TS files only)');
+      console.log('');
+      console.log('Build (one-time):');
+      console.log('  build-current       - Build: Project (full build once)');
+      console.log('  build-typescript    - Build: TypeScript (TS only once)');
+      console.log('');
+      console.log('Legacy commands:');
       console.log('  start <project>     - Start monitoring a project');
-      console.log('  start-current       - Start monitoring current project');
       console.log('  build <project>     - Build project once (full)');
-      console.log('  build-current       - Build current project once (full)');
       console.log('  build-script        - Build script only (fast)');
       console.log('  build-script-current - Build current script only (fast)');
       console.log('  build-priority      - Build with script priority + background sync');
       console.log('  build-priority-current - Build current with script priority');
+      console.log('');
+      console.log('Utilities:');
       console.log('  sync-development    - Force sync with development folder');
       console.log('  stop <project>      - Stop monitoring a project');
       console.log('  list               - List available projects');
