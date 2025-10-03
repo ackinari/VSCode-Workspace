@@ -3,6 +3,7 @@
     "configurations": [
         {
             "type": "minecraft-js",
+            "request": "attach",
             "port": 19144,
             "mode": "listen",
             "name": "Debug with Minecraft",
