@@ -1,9 +1,21 @@
 {
     "name": "minecraft-bedrock-workspace",
     "version": "1.0.0",
-    "description": "A modular workspace for Minecraft Bedrock development with TypeScript support",
+    "description": "TypeScript Workspace",
     "author": "aKiNaRi",
     "license": "MIT",
+    "private": true,
+    "devDependencies": {
+        "@minecraft/core-build-tasks": "^5.5.0",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.5.4"
+    },
+    "dependencies": {
+        "@minecraft/math": "^2.2.7",
+        "@minecraft/server": "^2.2.0",
+        "@minecraft/server-ui": "^2.0.0",
+        "@minecraft/vanilla-data": "^1.21.90"
+    },
     "main": "scripts/workspace-manager.js",
     "scripts": {
         "start-current": "node scripts/workspace-manager.js start-current",
@@ -21,32 +33,9 @@
         "new-project": "node scripts/scripts/new-project.js",
         "generate-types": "node scripts/scripts/generate-library-types.js"
     },
-    "keywords": [
-        "minecraft",
-        "bedrock",
-        "typescript",
-        "javascript",
-        "workspace",
-        "development"
-    ],
+    "keywords": ["minecraft","bedrock","typescript","javascript","workspace","development"],
     "repository": {
         "type": "git",
         "url": "https://github.com/ackinari/VSCode-Workspace.git"
-    },
-    "bugs": {
-        "url": "https://github.com/ackinari/VSCode-Workspace/issues"
-    },
-    "homepage": "https://github.com/ackinari/VSCode-Workspace",
-    "engines": {
-        "node": ">=16.0.0"
-    },
-    "devDependencies": {
-        "typescript": "^5.5.4"
-    },
-    "dependencies": {
-        "@minecraft/math": "^2.2.7",
-        "@minecraft/server": "^2.2.0",
-        "@minecraft/server-ui": "^2.0.0",
-        "@minecraft/vanilla-data": "^1.21.90"
     }
 }

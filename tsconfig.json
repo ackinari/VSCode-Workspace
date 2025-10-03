@@ -2,8 +2,8 @@
     "compilerOptions": {
         //? = = = important = = =
         "target": "es6",
-        "moduleResolution": "Node",
-        "module": "ES2020",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
 
         "declaration": false,
         "noLib": false,
