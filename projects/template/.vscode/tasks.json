@@ -1,125 +1,104 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
+    "version": "2.0.0",
+    "tasks": [
+      {
         "label": "debug",
         "type": "npm",
         "script": "debug",
+        "detail": "Prints project and directory info for debugging",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "typescript",
         "type": "npm",
         "script": "typescript",
+        "detail": "Compiles TypeScript files into JavaScript",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    // {
-    //     "label": "bundle",
-    //     "type": "npm",
-    //     "script": "bundle",
-    //     "options": {
-    //       "cwd": "${workspaceFolder}",
-    //       "env": {
-    //         "REAL_CWD": "${workspaceFolder}"
-    //       }
-    //     },
-    //     "problemMatcher": []
-    // },
-    {
+      },
+      {
         "label": "build",
         "type": "npm",
         "script": "build",
+        "detail": "Builds the project (TypeScript + bundle)",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "clean",
         "type": "npm",
         "script": "clean",
+        "detail": "Removes all build artifacts and temp files",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "clean-local",
         "type": "npm",
         "script": "clean-local",
+        "detail": "Cleans local build directories",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "clean-collateral",
         "type": "npm",
         "script": "clean-collateral",
+        "detail": "Cleans generated development folders",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "copyArtifacts",
         "type": "npm",
         "script": "copyArtifacts",
+        "detail": "Copies behavior and resource packs to dev folder",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "local-deploy",
         "type": "npm",
         "script": "local-deploy",
+        "detail": "Builds and deploys files locally with file watching",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    },
-    {
+      },
+      {
         "label": "watch",
         "type": "npm",
         "script": "watch",
+        "detail": "Watches for file changes and rebuilds automatically",
         "options": {
           "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
+          "env": { "REAL_CWD": "${workspaceFolder}" }
         },
         "problemMatcher": []
-    }
-  ]
-}
+      }
+    ]
+  }  
