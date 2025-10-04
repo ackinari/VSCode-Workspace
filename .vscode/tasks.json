@@ -10,7 +10,7 @@
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": false,
+                "focus": true,
                 "panel": "shared"
             },
             "detail": "Create new project from template"
@@ -38,7 +38,7 @@
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": false,
+                "focus": true,
                 "panel": "shared"
             },
             "detail": "Open Minecraft development folders"
