@@ -10,10 +10,56 @@
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": false,
+                "focus": true,
                 "panel": "shared"
             },
             "detail": "Create new project from template"
+        },
+        {
+            "label": "Clone Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "clone-project"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "detail": "Clone existing project with new UUIDs and name"
+        },
+        {
+            "label": "Delete Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "delete-project"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Delete project from workspace (with confirmation)",
+            "icon": {
+                "color": "terminal.ansiYellow",
+                "id": "alert"
+            }
+        },
+        {
+            "label": "Rename Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "rename-project"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared"
+            },
+            "detail": "Rename project directory and update manifests"
         }
     ]
 }

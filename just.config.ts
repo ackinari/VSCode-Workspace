@@ -12,13 +12,16 @@ import {
   watchTask,
   coreLint,
   newProjectTask,
-  validateProjectTask,
+  updateWorkspaceTask,
   analyzeProjectTask,
   backupProjectTask,
   updateVersionTask,
   generateUuidsTask,
   listProjectsTask,
   openMinecraftFolderTask,
+  cloneProjectTask,
+  deleteProjectTask,
+  renameProjectTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -45,7 +48,7 @@ const paths = {
 export const config = {
   projectName: actualProjectName,
   project: paths.project,
-  entry: path.join(paths.root, "tscripts/main.ts"),
+  entry: path.join(paths.project, "tscripts/main.ts"),
   outFile: path.join(paths.dist, "scripts/main.js"),
   behaviorPack: path.join(paths.project, "behavior_pack"),
   resourcePack: path.join(paths.project, "resource_pack"),
@@ -100,13 +103,16 @@ const TASKS = {
   CREATE_MCADDON: "createMcaddonFile",
   MCADDON: "mcaddon",
   NEW_PROJECT: "new-project",
-  VALIDATE: "validate",
+  UPDATE_WORKSPACE: "update-workspace",
   ANALYZE: "analyze",
   BACKUP: "backup",
   UPDATE_VERSION: "update-version",
   GENERATE_UUIDS: "generate-uuids",
   LIST_PROJECTS: "list-projects",
   OPEN_MC_FOLDER: "open-mc-folder",
+  CLONE_PROJECT: "clone-project",
+  DELETE_PROJECT: "delete-project",
+  RENAME_PROJECT: "rename-project",
 } as const;
 
 //§e = = = = = = = = tasks = = = = = = = = 
@@ -137,7 +143,7 @@ task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.BUILD, TASKS.CREATE_MCADDON)
 task(TASKS.NEW_PROJECT, newProjectTask(paths.root));
 
 // Project management tasks
-task(TASKS.VALIDATE, validateProjectTask(paths.project));
+task(TASKS.UPDATE_WORKSPACE, updateWorkspaceTask(paths.project, paths.root));
 task(TASKS.ANALYZE, analyzeProjectTask(paths.project));
 task(TASKS.BACKUP, backupProjectTask(paths.project, paths.root));
 task(TASKS.UPDATE_VERSION, updateVersionTask(paths.project));
@@ -146,3 +152,6 @@ task(TASKS.GENERATE_UUIDS, generateUuidsTask(paths.project));
 // Workspace tasks
 task(TASKS.LIST_PROJECTS, listProjectsTask(paths.root));
 task(TASKS.OPEN_MC_FOLDER, openMinecraftFolderTask());
+task(TASKS.CLONE_PROJECT, cloneProjectTask(paths.root));
+task(TASKS.DELETE_PROJECT, deleteProjectTask(paths.root));
+task(TASKS.RENAME_PROJECT, renameProjectTask(paths.root));
