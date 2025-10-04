@@ -3,28 +3,14 @@ node_modules/
 */node_modules/
 
 # Temporary files
+just.config.ts.old
 *.temp.json
 tsconfig.temp.json
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+package-lock.json
 
 # Others
 TODO.md
-package-lock.json
 
-# Ignora tudo dentro de projects
+# personal projects
 projects/*
 !projects/template/

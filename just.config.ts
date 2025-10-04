@@ -1,85 +1,107 @@
 import { argv, parallel, series, task, tscTask, TscTaskOptions } from "just-scripts";
-
-import {
-    STANDARD_CLEAN_PATHS,
-
-    bundleTask,
-    cleanTask,
-    cleanCollateralTask,
-    copyTask,
-    
-    mcaddonTask,
-    
-    getOrThrowFromProcess,
-    setupEnvironment,
-    watchTask,
-
-    coreLint
-} from "./.vscode/build-tasks"
 import path from "path";
 
-// setupEnvironment(path.resolve(__dirname, ".env"));
-// const projectName = getOrThrowFromProcess("PROJECT_NAME");
+import {
+  STANDARD_CLEAN_PATHS,
+  bundleTask,
+  cleanTask,
+  cleanCollateralTask,
+  copyTask,
+  mcaddonTask,
+  setupEnvironment,
+  watchTask,
+  coreLint,
+} from "./.vscode/build-tasks";
+
+//§e = = = = = = = = default configs = = = = = = = = 
+
 const projectDir = process.env.REAL_CWD || process.cwd();
 const projectName = path.basename(projectDir);
 
-type BundleTaskParameters = {
-    entryPoint: string;
-    external?: string[] | undefined;
-    minifyWhitespace?: boolean;
-    outfile: string;
-    sourcemap?: boolean | "linked" | "inline" | "external" | "both";
-    outputSourcemapPath?: string;
-    dropLabels?: string[];
-    alias?: Record<string, string>;
-}
-const bundleTaskOptions: BundleTaskParameters = {
-  entryPoint: path.join(__dirname, "./tscripts/main.ts"),
+const paths = {
+  root: path.resolve(__dirname),
+  dist: path.resolve(__dirname, "dist"),
+  project: path.resolve(__dirname, "projects", projectName),
+};
+
+export const config = {
+  projectName,
+  project: paths.project, // <- adiciona aqui
+  entry: path.join(paths.root, "tscripts/main.ts"),
+  outFile: path.join(paths.dist, "scripts/main.js"),
+  behaviorPack: path.join(paths.project, "behavior_pack"),
+  resourcePack: path.join(paths.project, "resource_pack"),
+  packageFile: path.join(paths.dist, "packages", `${projectName}.mcaddon`),
+};
+
+//§e = = = = = = = = task options = = = = = = = = 
+
+const bundleTaskOptions = {
+  entryPoint: config.entry,
   external: ["@minecraft/server", "@minecraft/server-ui"],
-  outfile: path.resolve(__dirname, "./dist/scripts/main.js"),
-  minifyWhitespace: true, //*
-//   sourcemap: true, // desativei source map tanto aqui quanto no tsconfig
-//   outputSourcemapPath: path.resolve(__dirname, "./dist/debug"),
+  outfile: config.outFile,
+  minifyWhitespace: true,
 };
 
-type CopyTaskParameters = {
-    copyToBehaviorPacks: string[];
-    copyToScripts?: string[];
-    copyToResourcePacks?: string[];
-}
-const copyTaskOptions: CopyTaskParameters = {
-  copyToBehaviorPacks: [`./projects/${projectName}/behavior_pack`],
-//   copyToScripts: [`./projects/${projectName}/dist/scripts`],
-  copyToResourcePacks: [`./projects/${projectName}/resource_pack`],
+const copyTaskOptions = {
+  copyToBehaviorPacks: [config.behaviorPack],
+  copyToResourcePacks: [config.resourcePack],
 };
+
 const typescriptOptions: TscTaskOptions = {
-    outDir: path.join(copyTaskOptions.copyToBehaviorPacks[0], "scripts")
-}
-const cleanDirectories = [typescriptOptions.outDir]; // ["temp", "lib", "dist"];
+  outDir: path.join(config.behaviorPack, "scripts"),
+};
 
-type ZipTaskParameters = CopyTaskParameters & {
-    outputFile: string;
-}
-const mcaddonTaskOptions: ZipTaskParameters = {...copyTaskOptions, outputFile: `./dist/packages/${projectName}.mcaddon`};
+const mcaddonTaskOptions = {
+  ...copyTaskOptions,
+  outputFile: config.packageFile,
+};
 
-task("debug", () => {    
-    console.log("project name:", projectName, "\ncurrent dir:", projectDir);
+const watchOptions = [
+  `${config.project}/tscripts/**/*.{ts,js}`,
+  `${config.behaviorPack}/**/*.{json,lang,tga,ogg,png}`,
+  `${config.resourcePack}/**/*.{json,lang,tga,ogg,png}`,
+];
+
+//§e = = = = = = = = tasks list = = = = = = = = 
+
+const TASKS = {
+  DEBUG: "debug",
+  LINT: "lint",
+  TYPESCRIPT: "typescript",
+  BUNDLE: "bundle",
+  BUILD: "build",
+  CLEAN_LOCAL: "clean-local",
+  CLEAN_COLLATERAL: "clean-collateral",
+  CLEAN: "clean",
+  COPY: "copyArtifacts",
+  PACKAGE: "package",
+  DEPLOY: "local-deploy",
+  CREATE_MCADDON: "createMcaddonFile",
+  MCADDON: "mcaddon",
+} as const;
+
+//§e = = = = = = = = tasks = = = = = = = = 
+
+task(TASKS.DEBUG, () => {
+  console.log("project:", config.projectName);
+  console.log("project dir:", projectDir);
 });
 
-task("lint", coreLint(["scripts/**/*.ts"], argv().fix)); // faz um lint nos scripts procurando por erros // funciona com o eslint.config.mjs
+task(TASKS.LINT, coreLint(["scripts/**/*.ts"], argv().fix));
 
-task("typescript", tscTask(typescriptOptions)); // transpila ts pra js em lib/scripts com .map
-task("bundle", bundleTask(bundleTaskOptions)); // separa os .map de lib em dist/debug | separa os .js de lib em dist/scripts §c se nao tiver sourcemap nao precisa
-task("build", series("typescript", "bundle")); // faz os dois acima §c desativado
+task(TASKS.TYPESCRIPT, tscTask(typescriptOptions));
+task(TASKS.BUNDLE, bundleTask(bundleTaskOptions));
+task(TASKS.BUILD, series(TASKS.TYPESCRIPT, TASKS.BUNDLE));
 
-task("clean-local", cleanTask(cleanDirectories)); // remove dist e lib §c desativado
-task("clean-collateral", cleanCollateralTask(STANDARD_CLEAN_PATHS, projectName)); // remove da development
-task("clean", parallel("clean-local", "clean-collateral")); // faz os dois acima
+task(TASKS.CLEAN_LOCAL, cleanTask([typescriptOptions.outDir]));
+task(TASKS.CLEAN_COLLATERAL, cleanCollateralTask(STANDARD_CLEAN_PATHS, config.projectName));
+task(TASKS.CLEAN, parallel(TASKS.CLEAN_LOCAL, TASKS.CLEAN_COLLATERAL));
 
-task("copyArtifacts", copyTask(copyTaskOptions, projectName)); // copia a BP (com tudo de dentro da dist/scripts) e RP para a development
-task("package", series("clean-collateral", "copyArtifacts")); // limpa a development e copia tudo pra lá
+task(TASKS.COPY, copyTask(copyTaskOptions, config.projectName));
+task(TASKS.PACKAGE, series(TASKS.CLEAN_COLLATERAL, TASKS.COPY));
 
-task("local-deploy", watchTask(["scripts/**/*.ts", "behavior_packs/**/*.{json,lang,tga,ogg,png}", "resource_packs/**/*.{json,lang,tga,ogg,png}"], series("clean-local", "typescript", "package"))); // "clean-local", "typescript", "package", "clean-local"
+task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE)));
 
-task("createMcaddonFile", mcaddonTask(mcaddonTaskOptions));
-task("mcaddon", series("clean-local", "build", "createMcaddonFile")); // cria um bp.mcpack | rp.mcpack | mcaddon em dist/packages
+task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions));
+task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.BUILD, TASKS.CREATE_MCADDON));
