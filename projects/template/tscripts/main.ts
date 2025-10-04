@@ -1,3 +1,5 @@
+import { world, system } from "@minecraft/server";
+
 console.log("Hello from template project!");
 
 export function templateFunction(): string {

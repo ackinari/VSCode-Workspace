@@ -1,25 +1,13 @@
-import { argv, parallel, series, task, tscTask, TscTaskOptions } from "just-scripts";
+//§e = = = = = = = = imports = = = = = = = = 
+import {STANDARD_CLEAN_PATHS, bundleTask, cleanTask, cleanCollateralTask, copyTask, mcaddonTask, watchTask, coreLint} from "./.vscode/build-tasks";
+import {argv, parallel, series, task, tscTask, TscTaskOptions} from "just-scripts";
 import path from "path";
-
-import {
-  STANDARD_CLEAN_PATHS,
-  bundleTask,
-  cleanTask,
-  cleanCollateralTask,
-  copyTask,
-  mcaddonTask,
-  setupEnvironment,
-  watchTask,
-  coreLint,
-} from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
 
 const projectDir = process.env.REAL_CWD || process.cwd();
 const projectName = path.basename(projectDir);
 
-// Detectar se estamos executando de dentro de um projeto
-// INIT_CWD é definido pelo npm e aponta para o diretório onde npm foi executado
 let actualProjectName = projectName;
 
 if (process.env.INIT_CWD && process.env.INIT_CWD.includes('projects')) {
