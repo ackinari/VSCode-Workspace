@@ -40,9 +40,10 @@
         // }
     },
     "include": [
-            "projects/**/tscripts/**/*",
-            "projects/**/scripts/**/*"
-        ], // "libraries/**/*"
+        "projects/**/tscripts/**/*",
+        "projects/**/scripts/**/*"
+        // "libraries/**/*"
+    ],
     "exclude": [
         "node_modules", "projects/**/behavior_pack/scripts/**/*"
     ]

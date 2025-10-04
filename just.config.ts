@@ -50,6 +50,7 @@ const copyTaskOptions = {
 
 const typescriptOptions: TscTaskOptions = {
   outDir: path.join(config.behaviorPack, "scripts"),
+//   rootDir: path.join(config.project, "tscripts"),
 };
 
 const mcaddonTaskOptions = {
