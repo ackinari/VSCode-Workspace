@@ -1,0 +1,26 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+        "label": "test",
+        "type": "shell",
+        "command": "echo",
+        "args": ["${fileDirname}"],
+        "options": {
+          "cwd": "${workspaceFolder}"
+        }
+    },
+    {
+        "label": "local-deploy",
+        "type": "npm",
+        "script": "local-deploy",
+        "problemMatcher": []
+    },
+    {
+        "label": "clean",
+        "type": "npm",
+        "script": "clean",
+        "problemMatcher": []
+    }
+  ]
+}
