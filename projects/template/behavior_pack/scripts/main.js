@@ -1,3 +1,3 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-console.log("[Script] Loaded!");
+console.log("[Script] Template Loaded!");
