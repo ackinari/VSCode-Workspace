@@ -451,40 +451,43 @@ export function coreLint(prettierFiles, fix) {
     )
 }
 
+const chalk = require('chalk')
+const inquirer = require('inquirer')
+
 export function newProjectTask(rootPath) {
     return async () => {
-        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
 
-        const askQuestion = (question) => {
-            return new Promise((resolve) => {
-                rl.question(question, (answer) => {
-                    resolve(answer.trim())
-                })
-            })
-        }
+        console.clear()
+        console.log(chalk.cyan.bold('Create New Project'))
+        console.log(chalk.gray('─'.repeat(50)))
 
         try {
-            const rawProjectName = await askQuestion('Enter project name: ')
+            const answers = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'projectName',
+                    message: 'Enter project name:',
+                    validate: (input) => {
+                        if (!input.trim()) {
+                            return 'Project name cannot be empty'
+                        }
+                        return true
+                    },
+                    filter: (input) => input.replace(/['"]/g, '').trim()
+                }
+            ])
 
-            if (!rawProjectName) {
-                console.error('Project name cannot be empty')
-                rl.close()
-                return
-            }
-
-            const projectName = rawProjectName.replace(/['"]/g, '').trim()
+            const projectName = answers.projectName
             const folderName = projectName.replace(/\s+/g, '_')
-
             const projectPath = path.join(rootPath, 'projects', folderName)
             const templatePath = path.join(rootPath, 'projects', 'template')
 
             if (fs.existsSync(projectPath)) {
-                console.error(`Project "${projectName}" already exists`)
-                rl.close()
+                console.log(chalk.red(`✗ Project "${projectName}" already exists`))
                 return
             }
 
-            console.log(`Creating project "${projectName}"...`)
+            console.log(chalk.yellow(`Creating project "${projectName}"...`))
 
             rushstack.FileSystem.copyFiles({
                 sourcePath: templatePath,
@@ -518,33 +521,36 @@ export function newProjectTask(rootPath) {
             const updatedLangContent = langContent.replace(/pack\.name=.*/g, `pack.name=${projectName}`)
             fs.writeFileSync(langFilePath, updatedLangContent)
 
-            console.log(`Project "${projectName}" created successfully!`)
-            console.log(`Location: ${projectPath}`)
+            console.log(chalk.green(`✓ Project "${projectName}" created successfully!`))
+            console.log(chalk.gray(`Location: ${projectPath}`))
 
-            const openCode = await askQuestion('Open this project in VS Code? (y/n): ')
+            const { openVSCode } = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'openVSCode',
+                    message: 'Open this project in VS Code?',
+                    default: true
+                }
+            ])
 
-            if (openCode.toLowerCase() === 'y') {
-                console.log('Opening VS Code...')
+            if (openVSCode) {
+                console.log(chalk.yellow('Opening VS Code...'))
 
                 child_process.exec(`code -r "${projectPath}"`, (err) => {
                     if (err) {
-                        console.error('\nFailed to open VS Code automatically.')
-                        console.error('Make sure the "code" command is installed in PATH.')
-                        console.log('You can enable it in VS Code via:')
-                        console.log('Ctrl+Shift+P → "Shell Command: Install \'code\' command in PATH"\n')
+                        console.log(chalk.red('Failed to open VS Code automatically.'))
+                        console.log(chalk.gray('Make sure the "code" command is installed in PATH.'))
+                        console.log(chalk.gray('You can enable it in VS Code via:'))
+                        console.log(chalk.gray('Ctrl+Shift+P → "Shell Command: Install \'code\' command in PATH"'))
                     } else {
-                        console.log('VS Code opened successfully!')
+                        console.log(chalk.green('✓ VS Code opened successfully!'))
                     }
-                    rl.close()
                 })
             } else {
-                console.log('Skipped opening VS Code.')
-                rl.close()
+                console.log(chalk.gray('Skipped opening VS Code.'))
             }
         } catch (error) {
-            console.error('Error creating project:', error)
-        } finally {
-            rl.close()
+            console.log(chalk.red('✗ Error creating project:'), error.message)
         }
     }
 }
@@ -1223,24 +1229,15 @@ export function openMinecraftFolderTask() {
 
 export function cloneProjectTask(rootPath) {
     return async () => {
+
         console.clear()
-        console.log('Clone existing project...\n')
-
-        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
-
-        const askQuestion = (question) => {
-            return new Promise((resolve) => {
-                rl.question(question, (answer) => {
-                    resolve(answer.trim())
-                })
-            })
-        }
+        console.log(chalk.cyan.bold('Clone Existing Project'))
+        console.log(chalk.gray('─'.repeat(50)))
 
         try {
             const projectsDir = path.join(rootPath, 'projects')
             if (!fs.existsSync(projectsDir)) {
-                console.log('[ERROR] Projects directory not found')
-                rl.close()
+                console.log(chalk.red('✗ Projects directory not found'))
                 return
             }
 
@@ -1250,46 +1247,50 @@ export function cloneProjectTask(rootPath) {
             })
 
             if (projects.length === 0) {
-                console.log('[INFO] No projects found to clone. Create one with: npm run new-project')
-                rl.close()
+                console.log(chalk.yellow('No projects found to clone.'))
+                console.log(chalk.gray('Create one with: npm run new-project'))
                 return
             }
 
-            console.log('Available projects to clone:')
-            projects.forEach((project, index) => {
-                console.log(`${index + 1}. ${project}`)
-            })
+            const projectChoices = projects.map((project, index) => ({
+                name: project,
+                value: project
+            }))
 
-            const sourceChoice = await askQuestion('\nSelect project to clone (number): ')
-            const sourceIndex = parseInt(sourceChoice) - 1
+            const answers = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'sourceProject',
+                    message: 'Select project to clone:',
+                    choices: projectChoices
+                },
+                {
+                    type: 'input',
+                    name: 'newProjectName',
+                    message: 'Enter new project name:',
+                    validate: (input) => {
+                        if (!input.trim()) {
+                            return 'Project name cannot be empty'
+                        }
+                        const cleanName = input.replace(/['"]/g, '').trim()
+                        const folderName = cleanName.replace(/\s+/g, '_')
+                        const newProjectPath = path.join(projectsDir, folderName)
+                        if (fs.existsSync(newProjectPath)) {
+                            return `Project "${cleanName}" already exists`
+                        }
+                        return true
+                    },
+                    filter: (input) => input.replace(/['"]/g, '').trim()
+                }
+            ])
 
-            if (sourceIndex < 0 || sourceIndex >= projects.length) {
-                console.log('[ERROR] Invalid project selection')
-                rl.close()
-                return
-            }
-
-            const sourceProject = projects[sourceIndex]
-            const sourcePath = path.join(projectsDir, sourceProject)
-
-            const newProjectName = await askQuestion('Enter new project name: ')
-            if (!newProjectName) {
-                console.log('[ERROR] Project name cannot be empty')
-                rl.close()
-                return
-            }
-
-            const cleanProjectName = newProjectName.replace(/['"]/g, '').trim()
+            const sourceProject = answers.sourceProject
+            const cleanProjectName = answers.newProjectName
             const folderName = cleanProjectName.replace(/\s+/g, '_')
+            const sourcePath = path.join(projectsDir, sourceProject)
             const newProjectPath = path.join(projectsDir, folderName)
 
-            if (fs.existsSync(newProjectPath)) {
-                console.log(`[ERROR] Project "${cleanProjectName}" already exists`)
-                rl.close()
-                return
-            }
-
-            console.log(`\nCloning "${sourceProject}" to "${cleanProjectName}"...`)
+            console.log(chalk.yellow(`Cloning "${sourceProject}" to "${cleanProjectName}"...`))
 
             // Copy project
             rushstack.FileSystem.copyFiles({
@@ -1340,16 +1341,14 @@ export function cloneProjectTask(rootPath) {
                 fs.writeFileSync(langFilePath, updatedLangContent)
             }
 
-            console.log(`\n[SUCCESS] Project cloned successfully!`)
-            console.log(`Source: ${sourceProject}`)
-            console.log(`New project: ${cleanProjectName}`)
-            console.log(`Location: ${newProjectPath}`)
-            console.log(`\n[INFO] New UUIDs generated automatically`)
+            console.log(chalk.green('✓ Project cloned successfully!'))
+            console.log(chalk.gray(`Source: ${sourceProject}`))
+            console.log(chalk.gray(`New project: ${cleanProjectName}`))
+            console.log(chalk.gray(`Location: ${newProjectPath}`))
+            console.log(chalk.blue('New UUIDs generated automatically'))
 
         } catch (error) {
-            console.error('[ERROR] Failed to clone project:', error.message)
-        } finally {
-            rl.close()
+            console.log(chalk.red('✗ Failed to clone project:'), error.message)
         }
     }
 }
@@ -1357,23 +1356,13 @@ export function cloneProjectTask(rootPath) {
 export function deleteProjectTask(rootPath) {
     return async () => {
         console.clear()
-        console.log('Delete project...\n')
-
-        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
-
-        const askQuestion = (question) => {
-            return new Promise((resolve) => {
-                rl.question(question, (answer) => {
-                    resolve(answer.trim())
-                })
-            })
-        }
+        console.log(chalk.red.bold('Delete Project'))
+        console.log(chalk.gray('─'.repeat(50)))
 
         try {
             const projectsDir = path.join(rootPath, 'projects')
             if (!fs.existsSync(projectsDir)) {
-                console.log('[ERROR] Projects directory not found')
-                rl.close()
+                console.log(chalk.red('✗ Projects directory not found'))
                 return
             }
 
@@ -1383,59 +1372,69 @@ export function deleteProjectTask(rootPath) {
             })
 
             if (projects.length === 0) {
-                console.log('[INFO] No projects found to delete')
-                rl.close()
+                console.log(chalk.yellow('No projects found to delete'))
                 return
             }
 
-            console.log('Available projects to delete:')
-            projects.forEach((project, index) => {
-                console.log(`${index + 1}. ${project}`)
-            })
+            const projectChoices = projects.map((project) => ({
+                name: project,
+                value: project
+            }))
 
-            const choice = await askQuestion('\nSelect project to delete (number): ')
-            const projectIndex = parseInt(choice) - 1
+            const { projectToDelete } = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'projectToDelete',
+                    message: 'Select project to delete:',
+                    choices: projectChoices
+                }
+            ])
 
-            if (projectIndex < 0 || projectIndex >= projects.length) {
-                console.log('[ERROR] Invalid project selection')
-                rl.close()
-                return
-            }
-
-            const projectToDelete = projects[projectIndex]
             const projectPath = path.join(projectsDir, projectToDelete)
 
-            console.log(`\n[WARNING] You are about to delete project: ${projectToDelete}`)
-            console.log(`Location: ${projectPath}`)
-            console.log('\nThis action cannot be undone!')
+            console.log(chalk.red(`\nWARNING: You are about to delete project: ${projectToDelete}`))
+            console.log(chalk.gray(`Location: ${projectPath}`))
+            console.log(chalk.red('This action cannot be undone!'))
 
-            const confirmation1 = await askQuestion('\nType the project name to confirm deletion: ')
-            if (confirmation1 !== projectToDelete) {
-                console.log('[INFO] Deletion cancelled - project name did not match')
-                rl.close()
+            const { confirmName } = await inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'confirmName',
+                    message: 'Type the project name to confirm deletion:',
+                    validate: (input) => {
+                        if (input !== projectToDelete) {
+                            return 'Project name does not match'
+                        }
+                        return true
+                    }
+                }
+            ])
+
+            const { finalConfirm } = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'finalConfirm',
+                    message: 'Are you absolutely sure you want to delete this project?',
+                    default: false
+                }
+            ])
+
+            if (!finalConfirm) {
+                console.log(chalk.gray('Deletion cancelled'))
                 return
             }
 
-            const confirmation2 = await askQuestion('Are you absolutely sure? (yes/no): ')
-            if (confirmation2.toLowerCase() !== 'yes') {
-                console.log('[INFO] Deletion cancelled')
-                rl.close()
-                return
-            }
-
-            console.log(`\nDeleting project "${projectToDelete}"...`)
+            console.log(chalk.yellow(`\nDeleting project "${projectToDelete}"...`))
 
             try {
                 rimraf.sync(projectPath)
-                console.log(`[SUCCESS] Project "${projectToDelete}" deleted successfully`)
+                console.log(chalk.green(`✓ Project "${projectToDelete}" deleted successfully`))
             } catch (error) {
-                console.error(`[ERROR] Failed to delete project: ${error.message}`)
+                console.log(chalk.red(`✗ Failed to delete project: ${error.message}`))
             }
 
         } catch (error) {
-            console.error('[ERROR] Failed to delete project:', error.message)
-        } finally {
-            rl.close()
+            console.log(chalk.red('✗ Failed to delete project:'), error.message)
         }
     }
 }
@@ -1443,23 +1442,13 @@ export function deleteProjectTask(rootPath) {
 export function renameProjectTask(rootPath) {
     return async () => {
         console.clear()
-        console.log('Rename project...\n')
-
-        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
-
-        const askQuestion = (question) => {
-            return new Promise((resolve) => {
-                rl.question(question, (answer) => {
-                    resolve(answer.trim())
-                })
-            })
-        }
+        console.log(chalk.blue.bold('Rename Project'))
+        console.log(chalk.gray('─'.repeat(50)))
 
         try {
             const projectsDir = path.join(rootPath, 'projects')
             if (!fs.existsSync(projectsDir)) {
-                console.log('[ERROR] Projects directory not found')
-                rl.close()
+                console.log(chalk.red('✗ Projects directory not found'))
                 return
             }
 
@@ -1469,46 +1458,49 @@ export function renameProjectTask(rootPath) {
             })
 
             if (projects.length === 0) {
-                console.log('[INFO] No projects found to rename')
-                rl.close()
+                console.log(chalk.yellow('No projects found to rename'))
                 return
             }
 
-            console.log('Available projects to rename:')
-            projects.forEach((project, index) => {
-                console.log(`${index + 1}. ${project}`)
-            })
+            const projectChoices = projects.map((project) => ({
+                name: project,
+                value: project
+            }))
 
-            const choice = await askQuestion('\nSelect project to rename (number): ')
-            const projectIndex = parseInt(choice) - 1
+            const answers = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'oldProjectName',
+                    message: 'Select project to rename:',
+                    choices: projectChoices
+                },
+                {
+                    type: 'input',
+                    name: 'newProjectName',
+                    message: 'Enter new project name:',
+                    validate: (input) => {
+                        if (!input.trim()) {
+                            return 'Project name cannot be empty'
+                        }
+                        const cleanName = input.replace(/['"]/g, '').trim()
+                        const folderName = cleanName.replace(/\s+/g, '_')
+                        const newProjectPath = path.join(projectsDir, folderName)
+                        if (fs.existsSync(newProjectPath)) {
+                            return `Project "${cleanName}" already exists`
+                        }
+                        return true
+                    },
+                    filter: (input) => input.replace(/['"]/g, '').trim()
+                }
+            ])
 
-            if (projectIndex < 0 || projectIndex >= projects.length) {
-                console.log('[ERROR] Invalid project selection')
-                rl.close()
-                return
-            }
-
-            const oldProjectName = projects[projectIndex]
-            const oldProjectPath = path.join(projectsDir, oldProjectName)
-
-            const newProjectName = await askQuestion('Enter new project name: ')
-            if (!newProjectName) {
-                console.log('[ERROR] Project name cannot be empty')
-                rl.close()
-                return
-            }
-
-            const cleanProjectName = newProjectName.replace(/['"]/g, '').trim()
+            const oldProjectName = answers.oldProjectName
+            const cleanProjectName = answers.newProjectName
             const newFolderName = cleanProjectName.replace(/\s+/g, '_')
+            const oldProjectPath = path.join(projectsDir, oldProjectName)
             const newProjectPath = path.join(projectsDir, newFolderName)
 
-            if (fs.existsSync(newProjectPath)) {
-                console.log(`[ERROR] Project "${cleanProjectName}" already exists`)
-                rl.close()
-                return
-            }
-
-            console.log(`\nRenaming "${oldProjectName}" to "${cleanProjectName}"...`)
+            console.log(chalk.yellow(`\nRenaming "${oldProjectName}" to "${cleanProjectName}"...`))
 
             // Copy to new location
             rushstack.FileSystem.copyFiles({
@@ -1547,15 +1539,13 @@ export function renameProjectTask(rootPath) {
             // Remove old project
             rimraf.sync(oldProjectPath)
 
-            console.log(`\n[SUCCESS] Project renamed successfully!`)
-            console.log(`Old name: ${oldProjectName}`)
-            console.log(`New name: ${cleanProjectName}`)
-            console.log(`Location: ${newProjectPath}`)
+            console.log(chalk.green(`✓ Project renamed successfully!`))
+            console.log(chalk.gray(`Old name: ${oldProjectName}`))
+            console.log(chalk.gray(`New name: ${cleanProjectName}`))
+            console.log(chalk.gray(`Location: ${newProjectPath}`))
 
         } catch (error) {
-            console.error('[ERROR] Failed to rename project:', error.message)
-        } finally {
-            rl.close()
+            console.log(chalk.red('✗ Failed to rename project:'), error.message)
         }
     }
 }
