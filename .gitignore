@@ -27,4 +27,4 @@ package-lock.json
 
 # Ignora tudo dentro de projects
 projects/*
-!projects/templates/
+!projects/template/
