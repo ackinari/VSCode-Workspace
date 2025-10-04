@@ -1,7 +1,6 @@
 import { argv, parallel, series, task, tscTask, TscTaskOptions } from "just-scripts";
 
 import {
-    DEFAULT_CLEAN_DIRECTORIES,
     STANDARD_CLEAN_PATHS,
 
     bundleTask,
@@ -45,17 +44,18 @@ const bundleTaskOptions: BundleTaskParameters = {
 
 type CopyTaskParameters = {
     copyToBehaviorPacks: string[];
-    copyToScripts: string[];
+    copyToScripts?: string[];
     copyToResourcePacks?: string[];
 }
 const copyTaskOptions: CopyTaskParameters = {
   copyToBehaviorPacks: [`./projects/${projectName}/behavior_pack`],
-  copyToScripts: [`./projects/${projectName}/dist/scripts`],
+//   copyToScripts: [`./projects/${projectName}/dist/scripts`],
   copyToResourcePacks: [`./projects/${projectName}/resource_pack`],
 };
 const typescriptOptions: TscTaskOptions = {
     outDir: path.join(copyTaskOptions.copyToBehaviorPacks[0], "scripts")
 }
+const cleanDirectories = [typescriptOptions.outDir]; // ["temp", "lib", "dist"];
 
 type ZipTaskParameters = CopyTaskParameters & {
     outputFile: string;
@@ -70,16 +70,16 @@ task("lint", coreLint(["scripts/**/*.ts"], argv().fix)); // faz um lint nos scri
 
 task("typescript", tscTask(typescriptOptions)); // transpila ts pra js em lib/scripts com .map
 task("bundle", bundleTask(bundleTaskOptions)); // separa os .map de lib em dist/debug | separa os .js de lib em dist/scripts §c se nao tiver sourcemap nao precisa
-task("build", series("typescript", "bundle")); // faz os dois acima
+task("build", series("typescript", "bundle")); // faz os dois acima §c desativado
 
-task("clean-local", cleanTask(DEFAULT_CLEAN_DIRECTORIES)); // remove dist e lib
+task("clean-local", cleanTask(cleanDirectories)); // remove dist e lib §c desativado
 task("clean-collateral", cleanCollateralTask(STANDARD_CLEAN_PATHS, projectName)); // remove da development
 task("clean", parallel("clean-local", "clean-collateral")); // faz os dois acima
 
 task("copyArtifacts", copyTask(copyTaskOptions, projectName)); // copia a BP (com tudo de dentro da dist/scripts) e RP para a development
 task("package", series("clean-collateral", "copyArtifacts")); // limpa a development e copia tudo pra lá
 
-task("local-deploy", watchTask(["scripts/**/*.ts", "behavior_packs/**/*.{json,lang,tga,ogg,png}", "resource_packs/**/*.{json,lang,tga,ogg,png}"], series("clean-local", "typescript", "package", "clean-local"))); // posso adicionar "clean-local" no final
+task("local-deploy", watchTask(["scripts/**/*.ts", "behavior_packs/**/*.{json,lang,tga,ogg,png}", "resource_packs/**/*.{json,lang,tga,ogg,png}"], series("clean-local", "typescript", "package"))); // "clean-local", "typescript", "package", "clean-local"
 
 task("createMcaddonFile", mcaddonTask(mcaddonTaskOptions));
 task("mcaddon", series("clean-local", "build", "createMcaddonFile")); // cria um bp.mcpack | rp.mcpack | mcaddon em dist/packages

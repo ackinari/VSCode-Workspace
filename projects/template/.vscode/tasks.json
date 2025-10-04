@@ -62,9 +62,9 @@
         "problemMatcher": []
     },
     {
-        "label": "clean",
+        "label": "clean-local",
         "type": "npm",
-        "script": "clean",
+        "script": "clean-local",
         "options": {
           "cwd": "${workspaceFolder}",
           "env": {
@@ -74,9 +74,9 @@
         "problemMatcher": []
     },
     {
-        "label": "clean",
+        "label": "clean-collateral",
         "type": "npm",
-        "script": "clean",
+        "script": "clean-collateral",
         "options": {
           "cwd": "${workspaceFolder}",
           "env": {

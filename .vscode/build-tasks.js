@@ -147,12 +147,11 @@ export function bundleTask(options) {
     };
 }
 
-export const DEFAULT_CLEAN_DIRECTORIES = ["temp", "lib", "dist"];
 export function cleanTask(dirs) {
     return () => {
         for (const dir of dirs) {
             try {
-                console.log(`Cleaning ${dir}`);
+                console.log(`Cleaning ${path.resolve(process.cwd(), dir)}`);
                 rimraf.sync(path.resolve(process.cwd(), dir));
             } catch (_2) {}
         }
@@ -326,8 +325,8 @@ export function copyTask(params, projectName) {
         if (deploymentPath === void 0) {
             throw new Error("Deployment path is undefined. Make sure to configure package root correctly.");
         }
-        copyFiles(params.copyToBehaviorPacks, path.join(deploymentPath, BehaviorPacksPath, projectName + "_BP"));
-        // copyFiles(params.copyToScripts, path.join(deploymentPath, BehaviorPacksPath, projectName + "_BP", "scripts"));
+        params.copyToBehaviorPacks && copyFiles(params.copyToBehaviorPacks, path.join(deploymentPath, BehaviorPacksPath, projectName + "_BP"));
+        params.copyToScripts && copyFiles(params.copyToScripts, path.join(deploymentPath, BehaviorPacksPath, projectName + "_BP", "scripts"));
         params.copyToResourcePacks && copyFiles(params.copyToResourcePacks, path.join(deploymentPath, ResourcePacksPath, projectName + "_RP"));
     };
 }
