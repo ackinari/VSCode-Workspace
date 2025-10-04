@@ -1,3 +1,5 @@
-import { world, system } from "@minecraft/server";
+console.log("Hello from template project!");
 
-console.log("[Script] Template Loaded!");
+export function templateFunction(): string {
+    return "This is from template project";
+}

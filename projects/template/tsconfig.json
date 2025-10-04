@@ -1,3 +1,14 @@
 {
-    "extends": "../../tsconfig.json"
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./behavior_pack/scripts",
+        "rootDir": "./tscripts"
+    },
+    "include": [
+        "./tscripts/**/*"
+    ],
+    "exclude": [
+        "node_modules",
+        "./behavior_pack/scripts/**/*"
+    ]
 }

@@ -1,3 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-console.log("[Script] Template Loaded!");
+exports.templateFunction = templateFunction;
+console.log("Hello from template project!");
+function templateFunction() {
+    return "This is from template project";
+}

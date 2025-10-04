@@ -18,20 +18,32 @@ import {
 const projectDir = process.env.REAL_CWD || process.cwd();
 const projectName = path.basename(projectDir);
 
+// Detectar se estamos executando de dentro de um projeto
+// INIT_CWD é definido pelo npm e aponta para o diretório onde npm foi executado
+let actualProjectName = projectName;
+
+if (process.env.INIT_CWD && process.env.INIT_CWD.includes('projects')) {
+  actualProjectName = path.basename(process.env.INIT_CWD);
+} else if (process.env.REAL_CWD && process.env.REAL_CWD.includes('projects')) {
+  actualProjectName = path.basename(process.env.REAL_CWD);
+} else if (projectDir.includes('projects') && projectDir !== path.resolve(__dirname)) {
+  actualProjectName = path.basename(projectDir);
+}
+
 const paths = {
   root: path.resolve(__dirname),
   dist: path.resolve(__dirname, "dist"),
-  project: path.resolve(__dirname, "projects", projectName),
+  project: path.resolve(__dirname, "projects", actualProjectName),
 };
 
 export const config = {
-  projectName,
+  projectName: actualProjectName,
   project: paths.project,
   entry: path.join(paths.root, "tscripts/main.ts"),
   outFile: path.join(paths.dist, "scripts/main.js"),
   behaviorPack: path.join(paths.project, "behavior_pack"),
   resourcePack: path.join(paths.project, "resource_pack"),
-  packageFile: path.join(paths.dist, "packages", `${projectName}.mcaddon`),
+  packageFile: path.join(paths.dist, "packages", `${actualProjectName}.mcaddon`),
 };
 
 //§e = = = = = = = = task options = = = = = = = = 
@@ -50,7 +62,8 @@ const copyTaskOptions = {
 
 const typescriptOptions: TscTaskOptions = {
   outDir: path.join(config.behaviorPack, "scripts"),
-//   rootDir: path.join(config.project, "tscripts"),
+  rootDir: path.join(config.project, "tscripts"),
+  project: path.join(config.project, "tsconfig.json"),
 };
 
 const mcaddonTaskOptions = {
@@ -87,6 +100,10 @@ const TASKS = {
 task(TASKS.DEBUG, () => {
   console.log("project:", config.projectName);
   console.log("project dir:", projectDir);
+  console.log("INIT_CWD:", process.env.INIT_CWD);
+  console.log("npm_config_local_prefix:", process.env.npm_config_local_prefix);
+  console.log("REAL_CWD:", process.env.REAL_CWD);
+  console.log("process.cwd():", process.cwd());
 });
 
 task(TASKS.LINT, coreLint(["scripts/**/*.ts"], argv().fix));

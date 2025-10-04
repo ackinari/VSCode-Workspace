@@ -40,9 +40,8 @@
         // }
     },
     "include": [
-        "projects/**/tscripts/**/*",
-        "projects/**/scripts/**/*"
-        // "libraries/**/*"
+        // Não incluir nenhum projeto por padrão
+        // Os projetos individuais terão seus próprios includes
     ],
     "exclude": [
         "node_modules", "projects/**/behavior_pack/scripts/**/*"
