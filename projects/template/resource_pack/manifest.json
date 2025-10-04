@@ -3,7 +3,7 @@
     "header": {
         "name": "pack.name",
         "description": "pack.description",
-        "uuid": "UUIDv4",
+        "uuid": "419ecba0-5a01-4d0b-a8ce-6111c9546472",
         "version": [1, 0, 0],
         "min_engine_version": [1, 21, 100]
     },
@@ -11,8 +11,13 @@
         {
             "description": "Resource Pack",
             "type": "resources",
-            "uuid": "UUIDv4",
+            "uuid": "797750d1-8b63-4b4a-ad53-5c5c78b91024",
             "version": [1, 0, 0]
+        }
+    ],
+    "dependencies": [
+        {
+            "uuid": "913e68f7-c030-4dd6-a7e2-6e125cae1f5d"
         }
     ]
 }

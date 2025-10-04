@@ -3,7 +3,7 @@
     "header": {
         "name": "pack.name",
         "description": "pack.description",
-        "uuid": "UUIDv4",
+        "uuid": "913e68f7-c030-4dd6-a7e2-6e125cae1f5d",
         "version": [1, 0, 0],
         "min_engine_version": [1, 21, 100]
     },
@@ -11,13 +11,16 @@
         {
             "description": "Script resources",
             "type": "script",
-            "uuid": "UUIDv4",
+            "uuid": "6c088a83-d254-4d80-84b2-97f506ebfbc9",
             "version": [1, 0, 0],
             "language": "javascript",
             "entry": "scripts/main.js"
         }
     ],
     "dependencies": [
+        {
+            "uuid": "AAA"
+        },
         {
             "module_name": "@minecraft/server",
             "version": "2.2.0"
