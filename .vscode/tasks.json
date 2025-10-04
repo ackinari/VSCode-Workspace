@@ -1,17 +1,125 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-        "label": "local-deploy",
-        "type": "npm",
-        "script": "local-deploy",
-        "problemMatcher": []
-    },
-    {
-        "label": "clean",
-        "type": "npm",
-        "script": "clean",
-        "problemMatcher": []
-    }
-  ]
-}
+    "version": "2.0.0",
+    "tasks": [
+      {
+          "label": "debug",
+          "type": "npm",
+          "script": "debug",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "typescript",
+          "type": "npm",
+          "script": "typescript",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      // {
+      //     "label": "bundle",
+      //     "type": "npm",
+      //     "script": "bundle",
+      //     "options": {
+      //       "cwd": "${workspaceFolder}",
+      //       "env": {
+      //         "REAL_CWD": "${workspaceFolder}"
+      //       }
+      //     },
+      //     "problemMatcher": []
+      // },
+      {
+          "label": "build",
+          "type": "npm",
+          "script": "build",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "clean",
+          "type": "npm",
+          "script": "clean",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "clean-local",
+          "type": "npm",
+          "script": "clean-local",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "clean-collateral",
+          "type": "npm",
+          "script": "clean-collateral",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "copyArtifacts",
+          "type": "npm",
+          "script": "copyArtifacts",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "local-deploy",
+          "type": "npm",
+          "script": "local-deploy",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      },
+      {
+          "label": "watch",
+          "type": "npm",
+          "script": "watch",
+          "options": {
+            "cwd": "${workspaceFolder}",
+            "env": {
+              "REAL_CWD": "${workspaceFolder}"
+            }
+          },
+          "problemMatcher": []
+      }
+    ]
+  }

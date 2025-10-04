@@ -25,18 +25,18 @@
         },
         "problemMatcher": []
     },
-    {
-        "label": "bundle",
-        "type": "npm",
-        "script": "bundle",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": {
-            "REAL_CWD": "${workspaceFolder}"
-          }
-        },
-        "problemMatcher": []
-    },
+    // {
+    //     "label": "bundle",
+    //     "type": "npm",
+    //     "script": "bundle",
+    //     "options": {
+    //       "cwd": "${workspaceFolder}",
+    //       "env": {
+    //         "REAL_CWD": "${workspaceFolder}"
+    //       }
+    //     },
+    //     "problemMatcher": []
+    // },
     {
         "label": "build",
         "type": "npm",
@@ -98,9 +98,9 @@
         "problemMatcher": []
     },
     {
-        "label": "local",
+        "label": "local-deploy",
         "type": "npm",
-        "script": "local",
+        "script": "local-deploy",
         "options": {
           "cwd": "${workspaceFolder}",
           "env": {
