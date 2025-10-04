@@ -18,8 +18,8 @@
         {
             "label": "TypeScript Compile",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "typescript"],
+            "command": "just-scripts",
+            "args": ["typescript"],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -241,6 +241,34 @@
                 "panel": "shared"
             },
             "detail": "Generate new UUIDs for project manifests"
+        },
+        {
+            "label": "List Projects",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "list-projects"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "List all available projects in workspace"
+        },
+        {
+            "label": "Open Minecraft Folder",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "open-mc-folder"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Open Minecraft development folders"
         }
     ]
 }

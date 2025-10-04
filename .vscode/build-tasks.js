@@ -759,6 +759,23 @@ export function analyzeProjectTask(projectPath) {
         console.log(`Image files: ${stats.imageFiles}`)
         console.log(`Audio files: ${stats.audioFiles}`)
 
+        // Helper function to get project name from lang file or manifest
+        function getProjectName(projectPath, manifest) {
+            const langFilePath = path.join(projectPath, 'resource_pack', 'texts', 'en_US.lang')
+            if (fs.existsSync(langFilePath)) {
+                try {
+                    const langContent = fs.readFileSync(langFilePath, 'utf8')
+                    const nameMatch = langContent.match(/pack\.name=(.+)/)
+                    if (nameMatch && nameMatch[1]) {
+                        return nameMatch[1].trim()
+                    }
+                } catch (error) {
+                    // Fall back to manifest name
+                }
+            }
+            return manifest.header?.name || 'Unknown'
+        }
+
         // Check manifests for additional info
         const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
         const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
@@ -766,11 +783,34 @@ export function analyzeProjectTask(projectPath) {
         if (fs.existsSync(behaviorManifestPath)) {
             try {
                 const manifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                const projectName = getProjectName(projectPath, manifest)
+                
                 console.log('\n--- Behavior Pack Info ---')
-                console.log(`Name: ${manifest.header?.name || 'Unknown'}`)
+                console.log(`Name: ${projectName}`)
                 console.log(`Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
                 console.log(`Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
                 console.log(`Modules: ${manifest.modules?.length || 0}`)
+
+                // Check for Minecraft server dependencies
+                const packageJsonPath = path.join(projectPath, '..', '..', 'package.json')
+                if (fs.existsSync(packageJsonPath)) {
+                    try {
+                        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+                        const deps = packageJson.dependencies || {}
+                        
+                        if (deps['@minecraft/server'] || deps['@minecraft/server-ui']) {
+                            console.log('\n--- Minecraft Dependencies ---')
+                            if (deps['@minecraft/server']) {
+                                console.log(`@minecraft/server: ${deps['@minecraft/server']}`)
+                            }
+                            if (deps['@minecraft/server-ui']) {
+                                console.log(`@minecraft/server-ui: ${deps['@minecraft/server-ui']}`)
+                            }
+                        }
+                    } catch (error) {
+                        // Ignore package.json read errors
+                    }
+                }
             } catch (error) {
                 console.log('\n[ERROR] Failed to read behavior pack manifest')
             }
@@ -779,8 +819,10 @@ export function analyzeProjectTask(projectPath) {
         if (fs.existsSync(resourceManifestPath)) {
             try {
                 const manifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+                const projectName = getProjectName(projectPath, manifest)
+                
                 console.log('\n--- Resource Pack Info ---')
-                console.log(`Name: ${manifest.header?.name || 'Unknown'}`)
+                console.log(`Name: ${projectName}`)
                 console.log(`Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
                 console.log(`Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
                 console.log(`Modules: ${manifest.modules?.length || 0}`)
@@ -1021,6 +1063,15 @@ export function generateUuidsTask(projectPath) {
 
 export function listProjectsTask(rootPath) {
     return () => {
+        // Check if we're in a valid project directory
+        if (!fs.existsSync(rootPath) || !rootPath.includes('workspace')) {
+            console.log('ERROR: This command must be run from within the workspace.')
+            console.log('Navigate to the workspace root first')
+            process.exitCode = 1
+            return
+        }
+
+        console.clear()
         console.log('Available projects:\n')
 
         const projectsDir = path.join(rootPath, 'projects')
@@ -1039,6 +1090,23 @@ export function listProjectsTask(rootPath) {
             return
         }
 
+        // Helper function to get project name from lang file or manifest
+        function getProjectName(projectPath, manifest) {
+            const langFilePath = path.join(projectPath, 'resource_pack', 'texts', 'en_US.lang')
+            if (fs.existsSync(langFilePath)) {
+                try {
+                    const langContent = fs.readFileSync(langFilePath, 'utf8')
+                    const nameMatch = langContent.match(/pack\.name=(.+)/)
+                    if (nameMatch && nameMatch[1]) {
+                        return nameMatch[1].trim()
+                    }
+                } catch (error) {
+                    // Fall back to manifest name
+                }
+            }
+            return manifest.header?.name || 'Unknown'
+        }
+
         projects.forEach((project, index) => {
             const projectPath = path.join(projectsDir, project)
             const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
@@ -1048,7 +1116,7 @@ export function listProjectsTask(rootPath) {
             if (fs.existsSync(behaviorManifestPath)) {
                 try {
                     const manifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
-                    const name = manifest.header?.name || 'Unknown'
+                    const name = getProjectName(projectPath, manifest)
                     const version = manifest.header?.version?.join('.') || 'Unknown'
                     projectInfo += ` (${name} v${version})`
                 } catch (error) {

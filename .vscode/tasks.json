@@ -10,38 +10,10 @@
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": true,
-                "panel": "shared"
-            },
-            "detail": "Create new project from template"
-        },
-        {
-            "label": "List Projects",
-            "type": "shell",
-            "command": "npm",
-            "args": ["run", "list-projects"],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": false,
                 "panel": "shared"
             },
-            "detail": "List all available projects in workspace"
-        },
-        {
-            "label": "Open Minecraft Folder",
-            "type": "shell",
-            "command": "npm",
-            "args": ["run", "open-mc-folder"],
-            "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": true,
-                "panel": "shared"
-            },
-            "detail": "Open Minecraft development folders"
+            "detail": "Create new project from template"
         }
     ]
 }
