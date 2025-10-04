@@ -40,10 +40,11 @@
         // }
     },
     "include": [
-        // Não incluir nenhum projeto por padrão
-        // Os projetos individuais terão seus próprios includes
+        "libraries/**/*.ts"
     ],
     "exclude": [
-        "node_modules", "projects/**/behavior_pack/scripts/**/*"
+        "node_modules", 
+        "projects/**/behavior_pack/scripts/**/*",
+        "libraries/**/*.js"
     ]
 }
