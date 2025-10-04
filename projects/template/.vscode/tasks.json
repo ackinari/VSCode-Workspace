@@ -41,7 +41,8 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "detail": "Create optimized bundle for production"
+            "detail": "Create optimized bundle for production",
+            "hide": true
         },
         {
             "label": "Build",
@@ -55,7 +56,8 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "detail": "Compile TypeScript and create bundle"
+            "detail": "Compile TypeScript and create bundle",
+            "hide": true
         },
         {
             "label": "Clean Local",
@@ -111,7 +113,8 @@
                 "focus": false,
                 "panel": "shared"
             },
-            "detail": "Deploy project files to Minecraft directories"
+            "detail": "Deploy project files to Minecraft directories",
+            "hide": true
         },
         {
             "label": "Local Deploy",
@@ -220,7 +223,7 @@
             "presentation": {
                 "echo": true,
                 "reveal": "always",
-                "focus": false,
+                "focus": true,
                 "panel": "shared"
             },
             "detail": "Update project version in manifests"

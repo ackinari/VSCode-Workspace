@@ -663,6 +663,7 @@ export function analyzeProjectTask(projectPath) {
             return
         }
 
+        console.clear()
         console.log('Analyzing project...\n')
 
         const stats = {
