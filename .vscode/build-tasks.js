@@ -517,3 +517,516 @@ export function newProjectTask(rootPath) {
         }
     }
 }
+
+// Validation utilities
+function validateManifest(manifestPath, packType) {
+    try {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+        const issues = []
+
+        // Check required fields
+        if (!manifest.format_version) issues.push('Missing format_version')
+        if (!manifest.header) issues.push('Missing header')
+        if (!manifest.modules) issues.push('Missing modules')
+
+        if (manifest.header) {
+            if (!manifest.header.name) issues.push('Missing header.name')
+            if (!manifest.header.description) issues.push('Missing header.description')
+            if (!manifest.header.uuid) issues.push('Missing header.uuid')
+            if (!manifest.header.version) issues.push('Missing header.version')
+            if (!manifest.header.min_engine_version) issues.push('Missing header.min_engine_version')
+
+            // Check UUID format
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+            if (manifest.header.uuid && !uuidRegex.test(manifest.header.uuid)) {
+                issues.push('Invalid header.uuid format')
+            }
+        }
+
+        if (manifest.modules && Array.isArray(manifest.modules)) {
+            manifest.modules.forEach((module, index) => {
+                if (!module.uuid) issues.push(`Missing modules[${index}].uuid`)
+                if (!module.type) issues.push(`Missing modules[${index}].type`)
+                if (!module.version) issues.push(`Missing modules[${index}].version`)
+
+                // Validate module type
+                const validTypes = ['script', 'resources', 'data', 'client_data', 'interface', 'world_template']
+                if (module.type && !validTypes.includes(module.type)) {
+                    issues.push(`Invalid modules[${index}].type: ${module.type}`)
+                }
+
+                // Check UUID format
+                const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+                if (module.uuid && !uuidRegex.test(module.uuid)) {
+                    issues.push(`Invalid modules[${index}].uuid format`)
+                }
+            })
+        }
+
+        return {valid: issues.length === 0, issues, manifest}
+    } catch (error) {
+        return {valid: false, issues: [`Failed to parse JSON: ${error.message}`], manifest: null}
+    }
+}
+
+export function validateProjectTask(projectPath) {
+    return () => {
+        console.log('🔍 Validating project structure and manifests...\n')
+
+        const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+        const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+
+        let hasErrors = false
+
+        // Validate behavior pack
+        if (fs.existsSync(behaviorManifestPath)) {
+            console.log('📦 Validating behavior pack manifest...')
+            const result = validateManifest(behaviorManifestPath, 'behavior')
+            if (result.valid) {
+                console.log('✅ Behavior pack manifest is valid')
+            } else {
+                console.log('❌ Behavior pack manifest has issues:')
+                result.issues.forEach((issue) => console.log(`   - ${issue}`))
+                hasErrors = true
+            }
+        } else {
+            console.log('⚠️  Behavior pack manifest not found')
+            hasErrors = true
+        }
+
+        console.log('')
+
+        // Validate resource pack
+        if (fs.existsSync(resourceManifestPath)) {
+            console.log('🎨 Validating resource pack manifest...')
+            const result = validateManifest(resourceManifestPath, 'resource')
+            if (result.valid) {
+                console.log('✅ Resource pack manifest is valid')
+            } else {
+                console.log('❌ Resource pack manifest has issues:')
+                result.issues.forEach((issue) => console.log(`   - ${issue}`))
+                hasErrors = true
+            }
+        } else {
+            console.log('⚠️  Resource pack manifest not found')
+        }
+
+        console.log('')
+
+        // Check for common files
+        const commonChecks = [
+            {path: path.join(projectPath, 'tscripts'), name: 'TypeScript source directory', required: true},
+            {path: path.join(projectPath, 'behavior_pack', 'scripts'), name: 'Compiled scripts directory', required: false},
+            {path: path.join(projectPath, 'resource_pack', 'texts'), name: 'Language files directory', required: false},
+            {path: path.join(projectPath, 'tsconfig.json'), name: 'TypeScript configuration', required: true},
+        ]
+
+        console.log('📁 Checking project structure...')
+        commonChecks.forEach((check) => {
+            if (fs.existsSync(check.path)) {
+                console.log(`✅ ${check.name} found`)
+            } else if (check.required) {
+                console.log(`❌ ${check.name} missing (required)`)
+                hasErrors = true
+            } else {
+                console.log(`⚠️  ${check.name} missing (optional)`)
+            }
+        })
+
+        console.log('')
+
+        if (hasErrors) {
+            console.log('❌ Project validation failed with errors')
+            process.exitCode = 1
+        } else {
+            console.log('✅ Project validation passed!')
+            process.exitCode = 0
+        }
+    }
+}
+
+export function analyzeProjectTask(projectPath) {
+    return () => {
+        console.log('📊 Analyzing project...\n')
+
+        const stats = {
+            totalFiles: 0,
+            typeScriptFiles: 0,
+            jsonFiles: 0,
+            langFiles: 0,
+            imageFiles: 0,
+            audioFiles: 0,
+            totalSize: 0,
+        }
+
+        function analyzeDirectory(dirPath, relativePath = '') {
+            if (!fs.existsSync(dirPath)) return
+
+            const items = fs.readdirSync(dirPath)
+            items.forEach((item) => {
+                const fullPath = path.join(dirPath, item)
+                const stat = fs.statSync(fullPath)
+
+                if (stat.isDirectory()) {
+                    analyzeDirectory(fullPath, path.join(relativePath, item))
+                } else {
+                    stats.totalFiles++
+                    stats.totalSize += stat.size
+
+                    const ext = path.extname(item).toLowerCase()
+                    switch (ext) {
+                        case '.ts':
+                            stats.typeScriptFiles++
+                            break
+                        case '.json':
+                            stats.jsonFiles++
+                            break
+                        case '.lang':
+                            stats.langFiles++
+                            break
+                        case '.png':
+                        case '.jpg':
+                        case '.jpeg':
+                        case '.tga':
+                            stats.imageFiles++
+                            break
+                        case '.ogg':
+                        case '.wav':
+                        case '.mp3':
+                            stats.audioFiles++
+                            break
+                    }
+                }
+            })
+        }
+
+        analyzeDirectory(projectPath)
+
+        // Format file size
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes'
+            const k = 1024
+            const sizes = ['Bytes', 'KB', 'MB', 'GB']
+            const i = Math.floor(Math.log(bytes) / Math.log(k))
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+        }
+
+        console.log('📈 Project Statistics:')
+        console.log(`   Total files: ${stats.totalFiles}`)
+        console.log(`   Total size: ${formatBytes(stats.totalSize)}`)
+        console.log(`   TypeScript files: ${stats.typeScriptFiles}`)
+        console.log(`   JSON files: ${stats.jsonFiles}`)
+        console.log(`   Language files: ${stats.langFiles}`)
+        console.log(`   Image files: ${stats.imageFiles}`)
+        console.log(`   Audio files: ${stats.audioFiles}`)
+
+        // Check manifests for additional info
+        const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+        const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+
+        if (fs.existsSync(behaviorManifestPath)) {
+            try {
+                const manifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                console.log('\n📦 Behavior Pack Info:')
+                console.log(`   Name: ${manifest.header?.name || 'Unknown'}`)
+                console.log(`   Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
+                console.log(`   Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
+                console.log(`   Modules: ${manifest.modules?.length || 0}`)
+            } catch (error) {
+                console.log('\n❌ Failed to read behavior pack manifest')
+            }
+        }
+
+        if (fs.existsSync(resourceManifestPath)) {
+            try {
+                const manifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+                console.log('\n🎨 Resource Pack Info:')
+                console.log(`   Name: ${manifest.header?.name || 'Unknown'}`)
+                console.log(`   Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
+                console.log(`   Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
+                console.log(`   Modules: ${manifest.modules?.length || 0}`)
+            } catch (error) {
+                console.log('\n❌ Failed to read resource pack manifest')
+            }
+        }
+
+        console.log('\n✅ Analysis complete!')
+    }
+}
+
+export function backupProjectTask(projectPath, rootPath) {
+    return async () => {
+        const projectName = path.basename(projectPath)
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0]
+        const backupName = `${projectName}_backup_${timestamp}`
+        const backupPath = path.join(rootPath, 'backups', backupName)
+
+        console.log(`💾 Creating backup: ${backupName}`)
+
+        try {
+            // Create backups directory if it doesn't exist
+            const backupsDir = path.join(rootPath, 'backups')
+            if (!fs.existsSync(backupsDir)) {
+                fs.mkdirSync(backupsDir, {recursive: true})
+            }
+
+            // Copy project to backup location
+            rushstack.FileSystem.copyFiles({
+                sourcePath: projectPath,
+                destinationPath: backupPath,
+                preserveTimestamps: true,
+            })
+
+            console.log(`✅ Backup created successfully at: ${backupPath}`)
+
+            // Create zip archive
+            const zipPath = `${backupPath}.zip`
+            const zip = new zip_lib.Zip()
+            zip.addFolder(backupPath)
+
+            await zip.archive(zipPath)
+            console.log(`📦 Backup archived as: ${zipPath}`)
+
+            // Remove uncompressed backup folder
+            rimraf.sync(backupPath)
+            console.log('🧹 Cleaned up temporary files')
+
+            // List existing backups
+            const backupFiles = fs.readdirSync(backupsDir).filter((file) => file.startsWith(projectName) && file.endsWith('.zip'))
+            console.log(`\n📚 Total backups for ${projectName}: ${backupFiles.length}`)
+
+            if (backupFiles.length > 5) {
+                console.log('⚠️  You have more than 5 backups. Consider cleaning up old ones.')
+            }
+        } catch (error) {
+            console.error('❌ Backup failed:', error.message)
+            process.exitCode = 1
+        }
+    }
+}
+
+export function updateVersionTask(projectPath) {
+    return async () => {
+        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
+
+        const askQuestion = (question) => {
+            return new Promise((resolve) => {
+                rl.question(question, (answer) => {
+                    resolve(answer.trim())
+                })
+            })
+        }
+
+        try {
+            const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+            const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+
+            if (!fs.existsSync(behaviorManifestPath)) {
+                console.error('❌ Behavior pack manifest not found')
+                rl.close()
+                return
+            }
+
+            const behaviorManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+            const currentVersion = behaviorManifest.header?.version || [1, 0, 0]
+
+            console.log(`📦 Current version: ${currentVersion.join('.')}`)
+            console.log('Version update options:')
+            console.log('1. Patch (x.x.X) - Bug fixes')
+            console.log('2. Minor (x.X.x) - New features')
+            console.log('3. Major (X.x.x) - Breaking changes')
+            console.log('4. Custom version')
+
+            const choice = await askQuestion('Select update type (1-4): ')
+
+            let newVersion = [...currentVersion]
+
+            switch (choice) {
+                case '1':
+                    newVersion[2]++
+                    break
+                case '2':
+                    newVersion[1]++
+                    newVersion[2] = 0
+                    break
+                case '3':
+                    newVersion[0]++
+                    newVersion[1] = 0
+                    newVersion[2] = 0
+                    break
+                case '4':
+                    const customVersion = await askQuestion('Enter custom version (x.y.z): ')
+                    const parts = customVersion.split('.').map(Number)
+                    if (parts.length === 3 && parts.every((n) => !isNaN(n) && n >= 0)) {
+                        newVersion = parts
+                    } else {
+                        console.error('❌ Invalid version format')
+                        rl.close()
+                        return
+                    }
+                    break
+                default:
+                    console.error('❌ Invalid choice')
+                    rl.close()
+                    return
+            }
+
+            console.log(`🔄 Updating version to: ${newVersion.join('.')}`)
+
+            // Update behavior pack
+            behaviorManifest.header.version = newVersion
+            if (behaviorManifest.modules) {
+                behaviorManifest.modules.forEach((module) => {
+                    module.version = newVersion
+                })
+            }
+            fs.writeFileSync(behaviorManifestPath, JSON.stringify(behaviorManifest, null, 4))
+
+            // Update resource pack if it exists
+            if (fs.existsSync(resourceManifestPath)) {
+                const resourceManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+                resourceManifest.header.version = newVersion
+                if (resourceManifest.modules) {
+                    resourceManifest.modules.forEach((module) => {
+                        module.version = newVersion
+                    })
+                }
+                fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4))
+            }
+
+            console.log('✅ Version updated successfully!')
+        } catch (error) {
+            console.error('❌ Failed to update version:', error.message)
+        } finally {
+            rl.close()
+        }
+    }
+}
+
+export function generateUuidsTask(projectPath) {
+    return () => {
+        console.log('🔄 Generating new UUIDs for project...')
+
+        const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+        const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+
+        try {
+            const behaviorHeaderUuid = crypto.randomUUID()
+            const behaviorModuleUuid = crypto.randomUUID()
+            const resourceHeaderUuid = crypto.randomUUID()
+            const resourceModuleUuid = crypto.randomUUID()
+
+            // Update behavior pack
+            if (fs.existsSync(behaviorManifestPath)) {
+                const behaviorManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                behaviorManifest.header.uuid = behaviorHeaderUuid
+                if (behaviorManifest.modules && behaviorManifest.modules[0]) {
+                    behaviorManifest.modules[0].uuid = behaviorModuleUuid
+                }
+                if (behaviorManifest.dependencies && behaviorManifest.dependencies[0]) {
+                    behaviorManifest.dependencies[0].uuid = resourceHeaderUuid
+                }
+                fs.writeFileSync(behaviorManifestPath, JSON.stringify(behaviorManifest, null, 4))
+                console.log('✅ Behavior pack UUIDs updated')
+            }
+
+            // Update resource pack
+            if (fs.existsSync(resourceManifestPath)) {
+                const resourceManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+                resourceManifest.header.uuid = resourceHeaderUuid
+                if (resourceManifest.modules && resourceManifest.modules[0]) {
+                    resourceManifest.modules[0].uuid = resourceModuleUuid
+                }
+                if (resourceManifest.dependencies && resourceManifest.dependencies[0]) {
+                    resourceManifest.dependencies[0].uuid = behaviorHeaderUuid
+                }
+                fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4))
+                console.log('✅ Resource pack UUIDs updated')
+            }
+
+            console.log('\n🆔 New UUIDs generated:')
+            console.log(`   Behavior Header: ${behaviorHeaderUuid}`)
+            console.log(`   Behavior Module: ${behaviorModuleUuid}`)
+            console.log(`   Resource Header: ${resourceHeaderUuid}`)
+            console.log(`   Resource Module: ${resourceModuleUuid}`)
+        } catch (error) {
+            console.error('❌ Failed to generate UUIDs:', error.message)
+            process.exitCode = 1
+        }
+    }
+}
+
+export function listProjectsTask(rootPath) {
+    return () => {
+        console.log('📋 Available projects:\n')
+
+        const projectsDir = path.join(rootPath, 'projects')
+        if (!fs.existsSync(projectsDir)) {
+            console.log('❌ Projects directory not found')
+            return
+        }
+
+        const projects = fs.readdirSync(projectsDir).filter((item) => {
+            const itemPath = path.join(projectsDir, item)
+            return fs.statSync(itemPath).isDirectory() && item !== 'template'
+        })
+
+        if (projects.length === 0) {
+            console.log('📭 No projects found. Create one with: npm run new-project')
+            return
+        }
+
+        projects.forEach((project, index) => {
+            const projectPath = path.join(projectsDir, project)
+            const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+
+            let projectInfo = `${index + 1}. ${project}`
+
+            if (fs.existsSync(behaviorManifestPath)) {
+                try {
+                    const manifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                    const name = manifest.header?.name || 'Unknown'
+                    const version = manifest.header?.version?.join('.') || 'Unknown'
+                    projectInfo += ` (${name} v${version})`
+                } catch (error) {
+                    projectInfo += ' (Invalid manifest)'
+                }
+            } else {
+                projectInfo += ' (No manifest)'
+            }
+
+            console.log(projectInfo)
+        })
+
+        console.log(`\n📊 Total projects: ${projects.length}`)
+    }
+}
+
+export function openMinecraftFolderTask() {
+    return () => {
+        const paths = getGameDeploymentRootPaths()
+        const availablePaths = Object.entries(paths).filter(([, path]) => path && fs.existsSync(path))
+
+        if (availablePaths.length === 0) {
+            console.log('❌ No Minecraft installation found')
+            return
+        }
+
+        console.log('📂 Opening Minecraft development folders...\n')
+
+        availablePaths.forEach(([product, folderPath]) => {
+            console.log(`🎮 ${product}: ${folderPath}`)
+            try {
+                child_process.exec(`explorer "${folderPath}"`, (error) => {
+                    if (error) {
+                        console.log(`❌ Failed to open ${product} folder`)
+                    } else {
+                        console.log(`✅ Opened ${product} folder`)
+                    }
+                })
+            } catch (error) {
+                console.log(`❌ Failed to open ${product} folder`)
+            }
+        })
+    }
+}

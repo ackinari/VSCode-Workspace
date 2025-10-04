@@ -12,5 +12,6 @@ package-lock.json
 TODO.md
 
 # personal projects
+backups/*
 projects/*
 !projects/template/

@@ -12,6 +12,13 @@ import {
   watchTask,
   coreLint,
   newProjectTask,
+  validateProjectTask,
+  analyzeProjectTask,
+  backupProjectTask,
+  updateVersionTask,
+  generateUuidsTask,
+  listProjectsTask,
+  openMinecraftFolderTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -93,6 +100,13 @@ const TASKS = {
   CREATE_MCADDON: "createMcaddonFile",
   MCADDON: "mcaddon",
   NEW_PROJECT: "new-project",
+  VALIDATE: "validate",
+  ANALYZE: "analyze",
+  BACKUP: "backup",
+  UPDATE_VERSION: "update-version",
+  GENERATE_UUIDS: "generate-uuids",
+  LIST_PROJECTS: "list-projects",
+  OPEN_MC_FOLDER: "open-mc-folder",
 } as const;
 
 //§e = = = = = = = = tasks = = = = = = = = 
@@ -121,3 +135,14 @@ task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions));
 task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.BUILD, TASKS.CREATE_MCADDON));
 
 task(TASKS.NEW_PROJECT, newProjectTask(paths.root));
+
+// Project management tasks
+task(TASKS.VALIDATE, validateProjectTask(paths.project));
+task(TASKS.ANALYZE, analyzeProjectTask(paths.project));
+task(TASKS.BACKUP, backupProjectTask(paths.project, paths.root));
+task(TASKS.UPDATE_VERSION, updateVersionTask(paths.project));
+task(TASKS.GENERATE_UUIDS, generateUuidsTask(paths.project));
+
+// Workspace tasks
+task(TASKS.LIST_PROJECTS, listProjectsTask(paths.root));
+task(TASKS.OPEN_MC_FOLDER, openMinecraftFolderTask());

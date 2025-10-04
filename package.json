@@ -38,6 +38,13 @@
         "lint": "cross-env REAL_CWD=%CD% just-scripts lint",
         "mcaddon": "cross-env REAL_CWD=%CD% just-scripts mcaddon",
         "new-project": "just-scripts new-project",
+        "validate": "cross-env REAL_CWD=%CD% just-scripts validate",
+        "analyze": "cross-env REAL_CWD=%CD% just-scripts analyze",
+        "backup": "cross-env REAL_CWD=%CD% just-scripts backup",
+        "update-version": "cross-env REAL_CWD=%CD% just-scripts update-version",
+        "generate-uuids": "cross-env REAL_CWD=%CD% just-scripts generate-uuids",
+        "list-projects": "just-scripts list-projects",
+        "open-mc-folder": "just-scripts open-mc-folder",
         "enablemcloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-1958404141-86561845-1752920682-3514627264-368642714-62675701-733520436",
         "enablemcpreviewloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-424268864-5579737-879501358-346833251-474568803-887069379-4040235476"
     },
