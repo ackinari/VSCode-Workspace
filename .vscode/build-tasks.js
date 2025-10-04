@@ -571,7 +571,15 @@ function validateManifest(manifestPath, packType) {
 
 export function validateProjectTask(projectPath) {
     return () => {
-        console.log('🔍 Validating project structure and manifests...\n')
+        // Check if we're in a valid project directory
+        if (!fs.existsSync(projectPath) || !projectPath.includes('projects')) {
+            console.log('ERROR: This command must be run from within a project directory.')
+            console.log('Navigate to a project folder first (e.g., cd projects/your-project)')
+            process.exitCode = 1
+            return
+        }
+
+        console.log('Validating project structure and manifests...\n')
 
         const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
         const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
@@ -580,17 +588,17 @@ export function validateProjectTask(projectPath) {
 
         // Validate behavior pack
         if (fs.existsSync(behaviorManifestPath)) {
-            console.log('📦 Validating behavior pack manifest...')
+            console.log('Validating behavior pack manifest...')
             const result = validateManifest(behaviorManifestPath, 'behavior')
             if (result.valid) {
-                console.log('✅ Behavior pack manifest is valid')
+                console.log('[PASS] Behavior pack manifest is valid')
             } else {
-                console.log('❌ Behavior pack manifest has issues:')
+                console.log('[FAIL] Behavior pack manifest has issues:')
                 result.issues.forEach((issue) => console.log(`   - ${issue}`))
                 hasErrors = true
             }
         } else {
-            console.log('⚠️  Behavior pack manifest not found')
+            console.log('[WARN] Behavior pack manifest not found')
             hasErrors = true
         }
 
@@ -598,17 +606,17 @@ export function validateProjectTask(projectPath) {
 
         // Validate resource pack
         if (fs.existsSync(resourceManifestPath)) {
-            console.log('🎨 Validating resource pack manifest...')
+            console.log('Validating resource pack manifest...')
             const result = validateManifest(resourceManifestPath, 'resource')
             if (result.valid) {
-                console.log('✅ Resource pack manifest is valid')
+                console.log('[PASS] Resource pack manifest is valid')
             } else {
-                console.log('❌ Resource pack manifest has issues:')
+                console.log('[FAIL] Resource pack manifest has issues:')
                 result.issues.forEach((issue) => console.log(`   - ${issue}`))
                 hasErrors = true
             }
         } else {
-            console.log('⚠️  Resource pack manifest not found')
+            console.log('[WARN] Resource pack manifest not found')
         }
 
         console.log('')
@@ -621,25 +629,25 @@ export function validateProjectTask(projectPath) {
             {path: path.join(projectPath, 'tsconfig.json'), name: 'TypeScript configuration', required: true},
         ]
 
-        console.log('📁 Checking project structure...')
+        console.log('Checking project structure...')
         commonChecks.forEach((check) => {
             if (fs.existsSync(check.path)) {
-                console.log(`✅ ${check.name} found`)
+                console.log(`[PASS] ${check.name} found`)
             } else if (check.required) {
-                console.log(`❌ ${check.name} missing (required)`)
+                console.log(`[FAIL] ${check.name} missing (required)`)
                 hasErrors = true
             } else {
-                console.log(`⚠️  ${check.name} missing (optional)`)
+                console.log(`[WARN] ${check.name} missing (optional)`)
             }
         })
 
         console.log('')
 
         if (hasErrors) {
-            console.log('❌ Project validation failed with errors')
+            console.log('[RESULT] Project validation failed with errors')
             process.exitCode = 1
         } else {
-            console.log('✅ Project validation passed!')
+            console.log('[RESULT] Project validation passed!')
             process.exitCode = 0
         }
     }
@@ -647,19 +655,31 @@ export function validateProjectTask(projectPath) {
 
 export function analyzeProjectTask(projectPath) {
     return () => {
-        console.log('📊 Analyzing project...\n')
+        // Check if we're in a valid project directory
+        if (!fs.existsSync(projectPath) || !projectPath.includes('projects')) {
+            console.log('ERROR: This command must be run from within a project directory.')
+            console.log('Navigate to a project folder first (e.g., cd projects/your-project)')
+            process.exitCode = 1
+            return
+        }
+
+        console.log('Analyzing project...\n')
 
         const stats = {
             totalFiles: 0,
+            behaviorFiles: 0,
+            resourceFiles: 0,
             typeScriptFiles: 0,
             jsonFiles: 0,
             langFiles: 0,
             imageFiles: 0,
             audioFiles: 0,
             totalSize: 0,
+            behaviorSize: 0,
+            resourceSize: 0,
         }
 
-        function analyzeDirectory(dirPath, relativePath = '') {
+        function analyzeDirectory(dirPath, relativePath = '', packType = 'other') {
             if (!fs.existsSync(dirPath)) return
 
             const items = fs.readdirSync(dirPath)
@@ -668,10 +688,22 @@ export function analyzeProjectTask(projectPath) {
                 const stat = fs.statSync(fullPath)
 
                 if (stat.isDirectory()) {
-                    analyzeDirectory(fullPath, path.join(relativePath, item))
+                    let newPackType = packType
+                    if (item === 'behavior_pack') newPackType = 'behavior'
+                    else if (item === 'resource_pack') newPackType = 'resource'
+                    
+                    analyzeDirectory(fullPath, path.join(relativePath, item), newPackType)
                 } else {
                     stats.totalFiles++
                     stats.totalSize += stat.size
+
+                    if (packType === 'behavior') {
+                        stats.behaviorFiles++
+                        stats.behaviorSize += stat.size
+                    } else if (packType === 'resource') {
+                        stats.resourceFiles++
+                        stats.resourceSize += stat.size
+                    }
 
                     const ext = path.extname(item).toLowerCase()
                     switch (ext) {
@@ -711,14 +743,20 @@ export function analyzeProjectTask(projectPath) {
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
         }
 
-        console.log('📈 Project Statistics:')
-        console.log(`   Total files: ${stats.totalFiles}`)
-        console.log(`   Total size: ${formatBytes(stats.totalSize)}`)
-        console.log(`   TypeScript files: ${stats.typeScriptFiles}`)
-        console.log(`   JSON files: ${stats.jsonFiles}`)
-        console.log(`   Language files: ${stats.langFiles}`)
-        console.log(`   Image files: ${stats.imageFiles}`)
-        console.log(`   Audio files: ${stats.audioFiles}`)
+        console.log('=== PROJECT STATISTICS ===')
+        console.log(`Total files: ${stats.totalFiles}`)
+        console.log(`Total size: ${formatBytes(stats.totalSize)}`)
+        console.log('')
+        console.log('--- Pack Distribution ---')
+        console.log(`Behavior pack files: ${stats.behaviorFiles} (${formatBytes(stats.behaviorSize)})`)
+        console.log(`Resource pack files: ${stats.resourceFiles} (${formatBytes(stats.resourceSize)})`)
+        console.log('')
+        console.log('--- File Types ---')
+        console.log(`TypeScript files: ${stats.typeScriptFiles}`)
+        console.log(`JSON files: ${stats.jsonFiles}`)
+        console.log(`Language files: ${stats.langFiles}`)
+        console.log(`Image files: ${stats.imageFiles}`)
+        console.log(`Audio files: ${stats.audioFiles}`)
 
         // Check manifests for additional info
         const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
@@ -727,41 +765,49 @@ export function analyzeProjectTask(projectPath) {
         if (fs.existsSync(behaviorManifestPath)) {
             try {
                 const manifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
-                console.log('\n📦 Behavior Pack Info:')
-                console.log(`   Name: ${manifest.header?.name || 'Unknown'}`)
-                console.log(`   Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
-                console.log(`   Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
-                console.log(`   Modules: ${manifest.modules?.length || 0}`)
+                console.log('\n--- Behavior Pack Info ---')
+                console.log(`Name: ${manifest.header?.name || 'Unknown'}`)
+                console.log(`Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
+                console.log(`Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
+                console.log(`Modules: ${manifest.modules?.length || 0}`)
             } catch (error) {
-                console.log('\n❌ Failed to read behavior pack manifest')
+                console.log('\n[ERROR] Failed to read behavior pack manifest')
             }
         }
 
         if (fs.existsSync(resourceManifestPath)) {
             try {
                 const manifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
-                console.log('\n🎨 Resource Pack Info:')
-                console.log(`   Name: ${manifest.header?.name || 'Unknown'}`)
-                console.log(`   Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
-                console.log(`   Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
-                console.log(`   Modules: ${manifest.modules?.length || 0}`)
+                console.log('\n--- Resource Pack Info ---')
+                console.log(`Name: ${manifest.header?.name || 'Unknown'}`)
+                console.log(`Version: ${manifest.header?.version?.join('.') || 'Unknown'}`)
+                console.log(`Min Engine: ${manifest.header?.min_engine_version?.join('.') || 'Unknown'}`)
+                console.log(`Modules: ${manifest.modules?.length || 0}`)
             } catch (error) {
-                console.log('\n❌ Failed to read resource pack manifest')
+                console.log('\n[ERROR] Failed to read resource pack manifest')
             }
         }
 
-        console.log('\n✅ Analysis complete!')
+        console.log('\n[COMPLETE] Analysis finished!')
     }
 }
 
 export function backupProjectTask(projectPath, rootPath) {
     return async () => {
+        // Check if we're in a valid project directory
+        if (!fs.existsSync(projectPath) || !projectPath.includes('projects')) {
+            console.log('ERROR: This command must be run from within a project directory.')
+            console.log('Navigate to a project folder first (e.g., cd projects/your-project)')
+            process.exitCode = 1
+            return
+        }
+
         const projectName = path.basename(projectPath)
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0]
         const backupName = `${projectName}_backup_${timestamp}`
         const backupPath = path.join(rootPath, 'backups', backupName)
 
-        console.log(`💾 Creating backup: ${backupName}`)
+        console.log(`Creating backup: ${backupName}`)
 
         try {
             // Create backups directory if it doesn't exist
@@ -777,7 +823,7 @@ export function backupProjectTask(projectPath, rootPath) {
                 preserveTimestamps: true,
             })
 
-            console.log(`✅ Backup created successfully at: ${backupPath}`)
+            console.log(`[SUCCESS] Backup created successfully at: ${backupPath}`)
 
             // Create zip archive
             const zipPath = `${backupPath}.zip`
@@ -785,21 +831,21 @@ export function backupProjectTask(projectPath, rootPath) {
             zip.addFolder(backupPath)
 
             await zip.archive(zipPath)
-            console.log(`📦 Backup archived as: ${zipPath}`)
+            console.log(`[SUCCESS] Backup archived as: ${zipPath}`)
 
             // Remove uncompressed backup folder
             rimraf.sync(backupPath)
-            console.log('🧹 Cleaned up temporary files')
+            console.log('[INFO] Cleaned up temporary files')
 
             // List existing backups
             const backupFiles = fs.readdirSync(backupsDir).filter((file) => file.startsWith(projectName) && file.endsWith('.zip'))
-            console.log(`\n📚 Total backups for ${projectName}: ${backupFiles.length}`)
+            console.log(`\n[INFO] Total backups for ${projectName}: ${backupFiles.length}`)
 
             if (backupFiles.length > 5) {
-                console.log('⚠️  You have more than 5 backups. Consider cleaning up old ones.')
+                console.log('[WARN] You have more than 5 backups. Consider cleaning up old ones.')
             }
         } catch (error) {
-            console.error('❌ Backup failed:', error.message)
+            console.error('[ERROR] Backup failed:', error.message)
             process.exitCode = 1
         }
     }
@@ -807,6 +853,14 @@ export function backupProjectTask(projectPath, rootPath) {
 
 export function updateVersionTask(projectPath) {
     return async () => {
+        // Check if we're in a valid project directory
+        if (!fs.existsSync(projectPath) || !projectPath.includes('projects')) {
+            console.log('ERROR: This command must be run from within a project directory.')
+            console.log('Navigate to a project folder first (e.g., cd projects/your-project)')
+            process.exitCode = 1
+            return
+        }
+
         const rl = readline.createInterface({input: process.stdin, output: process.stdout})
 
         const askQuestion = (question) => {
@@ -822,7 +876,7 @@ export function updateVersionTask(projectPath) {
             const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
 
             if (!fs.existsSync(behaviorManifestPath)) {
-                console.error('❌ Behavior pack manifest not found')
+                console.error('[ERROR] Behavior pack manifest not found')
                 rl.close()
                 return
             }
@@ -830,7 +884,7 @@ export function updateVersionTask(projectPath) {
             const behaviorManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
             const currentVersion = behaviorManifest.header?.version || [1, 0, 0]
 
-            console.log(`📦 Current version: ${currentVersion.join('.')}`)
+            console.log(`Current version: ${currentVersion.join('.')}`)
             console.log('Version update options:')
             console.log('1. Patch (x.x.X) - Bug fixes')
             console.log('2. Minor (x.X.x) - New features')
@@ -860,18 +914,18 @@ export function updateVersionTask(projectPath) {
                     if (parts.length === 3 && parts.every((n) => !isNaN(n) && n >= 0)) {
                         newVersion = parts
                     } else {
-                        console.error('❌ Invalid version format')
+                        console.error('[ERROR] Invalid version format')
                         rl.close()
                         return
                     }
                     break
                 default:
-                    console.error('❌ Invalid choice')
+                    console.error('[ERROR] Invalid choice')
                     rl.close()
                     return
             }
 
-            console.log(`🔄 Updating version to: ${newVersion.join('.')}`)
+            console.log(`Updating version to: ${newVersion.join('.')}`)
 
             // Update behavior pack
             behaviorManifest.header.version = newVersion
@@ -894,9 +948,9 @@ export function updateVersionTask(projectPath) {
                 fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4))
             }
 
-            console.log('✅ Version updated successfully!')
+            console.log('[SUCCESS] Version updated successfully!')
         } catch (error) {
-            console.error('❌ Failed to update version:', error.message)
+            console.error('[ERROR] Failed to update version:', error.message)
         } finally {
             rl.close()
         }
@@ -905,7 +959,15 @@ export function updateVersionTask(projectPath) {
 
 export function generateUuidsTask(projectPath) {
     return () => {
-        console.log('🔄 Generating new UUIDs for project...')
+        // Check if we're in a valid project directory
+        if (!fs.existsSync(projectPath) || !projectPath.includes('projects')) {
+            console.log('ERROR: This command must be run from within a project directory.')
+            console.log('Navigate to a project folder first (e.g., cd projects/your-project)')
+            process.exitCode = 1
+            return
+        }
+
+        console.log('Generating new UUIDs for project...')
 
         const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
         const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
@@ -927,7 +989,7 @@ export function generateUuidsTask(projectPath) {
                     behaviorManifest.dependencies[0].uuid = resourceHeaderUuid
                 }
                 fs.writeFileSync(behaviorManifestPath, JSON.stringify(behaviorManifest, null, 4))
-                console.log('✅ Behavior pack UUIDs updated')
+                console.log('[SUCCESS] Behavior pack UUIDs updated')
             }
 
             // Update resource pack
@@ -941,16 +1003,16 @@ export function generateUuidsTask(projectPath) {
                     resourceManifest.dependencies[0].uuid = behaviorHeaderUuid
                 }
                 fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4))
-                console.log('✅ Resource pack UUIDs updated')
+                console.log('[SUCCESS] Resource pack UUIDs updated')
             }
 
-            console.log('\n🆔 New UUIDs generated:')
-            console.log(`   Behavior Header: ${behaviorHeaderUuid}`)
-            console.log(`   Behavior Module: ${behaviorModuleUuid}`)
-            console.log(`   Resource Header: ${resourceHeaderUuid}`)
-            console.log(`   Resource Module: ${resourceModuleUuid}`)
+            console.log('\n=== NEW UUIDS GENERATED ===')
+            console.log(`Behavior Header: ${behaviorHeaderUuid}`)
+            console.log(`Behavior Module: ${behaviorModuleUuid}`)
+            console.log(`Resource Header: ${resourceHeaderUuid}`)
+            console.log(`Resource Module: ${resourceModuleUuid}`)
         } catch (error) {
-            console.error('❌ Failed to generate UUIDs:', error.message)
+            console.error('[ERROR] Failed to generate UUIDs:', error.message)
             process.exitCode = 1
         }
     }
@@ -958,11 +1020,11 @@ export function generateUuidsTask(projectPath) {
 
 export function listProjectsTask(rootPath) {
     return () => {
-        console.log('📋 Available projects:\n')
+        console.log('Available projects:\n')
 
         const projectsDir = path.join(rootPath, 'projects')
         if (!fs.existsSync(projectsDir)) {
-            console.log('❌ Projects directory not found')
+            console.log('[ERROR] Projects directory not found')
             return
         }
 
@@ -972,7 +1034,7 @@ export function listProjectsTask(rootPath) {
         })
 
         if (projects.length === 0) {
-            console.log('📭 No projects found. Create one with: npm run new-project')
+            console.log('[INFO] No projects found. Create one with: npm run new-project')
             return
         }
 
@@ -998,35 +1060,80 @@ export function listProjectsTask(rootPath) {
             console.log(projectInfo)
         })
 
-        console.log(`\n📊 Total projects: ${projects.length}`)
+        console.log(`\n[INFO] Total projects: ${projects.length}`)
     }
 }
 
 export function openMinecraftFolderTask() {
-    return () => {
+    return async () => {
         const paths = getGameDeploymentRootPaths()
         const availablePaths = Object.entries(paths).filter(([, path]) => path && fs.existsSync(path))
 
         if (availablePaths.length === 0) {
-            console.log('❌ No Minecraft installation found')
+            console.log('[ERROR] No Minecraft installation found')
             return
         }
 
-        console.log('📂 Opening Minecraft development folders...\n')
-
-        availablePaths.forEach(([product, folderPath]) => {
-            console.log(`🎮 ${product}: ${folderPath}`)
+        if (availablePaths.length === 1) {
+            // Only one option available, open it directly
+            const [product, folderPath] = availablePaths[0]
+            console.log(`Opening ${product} folder: ${folderPath}`)
             try {
-                child_process.exec(`explorer "${folderPath}"`, (error) => {
-                    if (error) {
-                        console.log(`❌ Failed to open ${product} folder`)
-                    } else {
-                        console.log(`✅ Opened ${product} folder`)
-                    }
-                })
+                child_process.exec(`explorer "${folderPath}"`)
+                console.log('[SUCCESS] Folder opened successfully')
             } catch (error) {
-                console.log(`❌ Failed to open ${product} folder`)
+                console.log('[ERROR] Failed to open folder')
             }
-        })
+            return
+        }
+
+        // Multiple options available, let user choose
+        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
+
+        const askQuestion = (question) => {
+            return new Promise((resolve) => {
+                rl.question(question, (answer) => {
+                    resolve(answer.trim())
+                })
+            })
+        }
+
+        try {
+            console.log('Available Minecraft installations:')
+            availablePaths.forEach(([product, folderPath], index) => {
+                const isDefault = product === 'BedrockUWP'
+                console.log(`${index + 1}. ${product}${isDefault ? ' (default)' : ''}: ${folderPath}`)
+            })
+
+            const choice = await askQuestion('\nSelect installation to open (1-' + availablePaths.length + ', or press Enter for default): ')
+
+            let selectedIndex = 0 // Default to BedrockUWP
+            if (choice) {
+                const choiceNum = parseInt(choice)
+                if (choiceNum >= 1 && choiceNum <= availablePaths.length) {
+                    selectedIndex = choiceNum - 1
+                } else {
+                    console.log('[ERROR] Invalid choice, using default')
+                }
+            } else {
+                // Find BedrockUWP index or use first available
+                const bedrockIndex = availablePaths.findIndex(([product]) => product === 'BedrockUWP')
+                selectedIndex = bedrockIndex !== -1 ? bedrockIndex : 0
+            }
+
+            const [selectedProduct, selectedPath] = availablePaths[selectedIndex]
+            console.log(`\nOpening ${selectedProduct} folder: ${selectedPath}`)
+
+            try {
+                child_process.exec(`explorer "${selectedPath}"`)
+                console.log('[SUCCESS] Folder opened successfully')
+            } catch (error) {
+                console.log('[ERROR] Failed to open folder')
+            }
+        } catch (error) {
+            console.error('[ERROR] Failed to process selection:', error.message)
+        } finally {
+            rl.close()
+        }
     }
 }
