@@ -471,7 +471,7 @@ export function mcaddonTask(params) {
     );
 }
 
-//! tirar depois:
+//! remove later:
 import * as child_process from "child_process";
 import * as process from "process";
 var LEGACY_CONFIG_FILES = [".eslintrc.js"];
@@ -548,4 +548,88 @@ export function coreLint(prettierFiles, fix) {
             () => !!prettierFiles && prettierFiles.length > 0
         )
     );
+}
+
+import * as crypto from "crypto";
+import * as readline from "readline";
+
+export function newProjectTask(rootPath) {
+    return async () => {
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        const askQuestion = (question) => {
+            return new Promise((resolve) => {
+                rl.question(question, (answer) => {
+                    resolve(answer.trim());
+                });
+            });
+        };
+
+        try {
+            const rawProjectName = await askQuestion('Enter project name: ');
+            
+            if (!rawProjectName) {
+                console.error('Project name cannot be empty');
+                rl.close();
+                return;
+            }
+
+            const projectName = rawProjectName.replace(/['"]/g, '').trim();
+            const folderName = projectName.replace(/\s+/g, '_');
+
+            const projectPath = path.join(rootPath, 'projects', folderName);
+            const templatePath = path.join(rootPath, 'projects', 'template');
+
+            if (fs.existsSync(projectPath)) {
+                console.error(`Project "${projectName}" already exists`);
+                rl.close();
+                return;
+            }
+
+            console.log(`Creating project "${projectName}"...`);
+
+            rushstack.FileSystem.copyFiles({
+                sourcePath: templatePath,
+                destinationPath: projectPath,
+                preserveTimestamps: true
+            });
+
+            const behaviorHeaderUuid = crypto.randomUUID();
+            const behaviorModuleUuid = crypto.randomUUID();
+            const resourceHeaderUuid = crypto.randomUUID();
+            const resourceModuleUuid = crypto.randomUUID();
+
+            const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json');
+            const behaviorManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'));
+            behaviorManifest.header.uuid = behaviorHeaderUuid;
+            behaviorManifest.modules[0].uuid = behaviorModuleUuid;
+            behaviorManifest.dependencies[0].uuid = resourceHeaderUuid;
+            fs.writeFileSync(behaviorManifestPath, JSON.stringify(behaviorManifest, null, 4));
+
+            const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json');
+            const resourceManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'));
+            resourceManifest.header.uuid = resourceHeaderUuid;
+            resourceManifest.modules[0].uuid = resourceModuleUuid;
+            if (resourceManifest.dependencies && resourceManifest.dependencies[0]) {
+                resourceManifest.dependencies[0].uuid = behaviorHeaderUuid;
+            }
+            fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4));
+
+            const langFilePath = path.join(projectPath, 'resource_pack', 'texts', 'en_US.lang');
+            const langContent = fs.readFileSync(langFilePath, 'utf8');
+            const updatedLangContent = langContent.replace(/pack\.name=.*/g, `pack.name=${projectName}`);
+            fs.writeFileSync(langFilePath, updatedLangContent);
+
+            console.log(`Project "${projectName}" created successfully!`);
+            console.log(`Location: ${projectPath}`);
+            
+        } catch (error) {
+            console.error('Error creating project:', error);
+        } finally {
+            rl.close();
+        }
+    };
 }
