@@ -1,7 +1,18 @@
-//§e = = = = = = = = imports = = = = = = = = 
-import {STANDARD_CLEAN_PATHS, bundleTask, cleanTask, cleanCollateralTask, copyTask, mcaddonTask, watchTask, coreLint} from "./.vscode/build-tasks";
-import {argv, parallel, series, task, tscTask, TscTaskOptions} from "just-scripts";
+import { argv, parallel, series, task, tscTask, TscTaskOptions } from "just-scripts";
 import path from "path";
+
+import {
+  STANDARD_CLEAN_PATHS,
+  bundleTask,
+  cleanTask,
+  cleanCollateralTask,
+  copyTask,
+  mcaddonTask,
+  setupEnvironment,
+  watchTask,
+  coreLint,
+  newProjectTask,
+} from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
 
@@ -81,6 +92,7 @@ const TASKS = {
   DEPLOY: "local-deploy",
   CREATE_MCADDON: "createMcaddonFile",
   MCADDON: "mcaddon",
+  NEW_PROJECT: "new-project",
 } as const;
 
 //§e = = = = = = = = tasks = = = = = = = = 
@@ -88,10 +100,6 @@ const TASKS = {
 task(TASKS.DEBUG, () => {
   console.log("project:", config.projectName);
   console.log("project dir:", projectDir);
-  console.log("INIT_CWD:", process.env.INIT_CWD);
-  console.log("npm_config_local_prefix:", process.env.npm_config_local_prefix);
-  console.log("REAL_CWD:", process.env.REAL_CWD);
-  console.log("process.cwd():", process.cwd());
 });
 
 task(TASKS.LINT, coreLint(["scripts/**/*.ts"], argv().fix));
@@ -111,3 +119,5 @@ task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPES
 
 task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions));
 task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.BUILD, TASKS.CREATE_MCADDON));
+
+task(TASKS.NEW_PROJECT, newProjectTask(paths.root));
