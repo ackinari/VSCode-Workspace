@@ -2,8 +2,8 @@
     "compilerOptions": {
         //? = = = important = = =
         "target": "es6",
-        "module": "nodenext",
-        "moduleResolution": "nodenext",
+        "moduleResolution": "Node",
+        "module": "ES2020",
 
         "declaration": false,
         "noLib": false,
@@ -21,7 +21,7 @@
         "noImplicitReturns": true,
         // "noImplicitUseStrict": false, //*
         // "noUnusedLocals": true, //*
-        "noUnusedParameters": true,
+        // "noUnusedParameters": true,
 
         // "noEmit": true, //*
         "allowJs": true,
