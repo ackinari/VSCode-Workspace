@@ -9,19 +9,15 @@
         "**/package-lock.json": true,
         "**/tsconfig.json": true,
         "**/tsconfig.temp.json": true,
+        ".vscode": true,
 
         "**/.git": true,
         "**/.DS_Store": true
     },
     "files.exclude": {
-        // "**/node_modules": true,
-        // "**/package.json": true,
-        // "**/package-lock.json": true,
-        // "**/tsconfig.json": true,
-        // "**/tsconfig.temp.json": true,
-
-        "**/.git": true,
-        "**/.DS_Store": true
+        "**/tsconfig.temp.json": true,
+        "**/tsconfig.json": true,
+        ".vscode": true,
     },
     "eslint.useFlatConfig": true,
 
