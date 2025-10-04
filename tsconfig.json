@@ -2,6 +2,7 @@
     "compilerOptions": {
         //? = = = important = = =
         "target": "es6",
+        "ignoreDeprecations": "6.0",
         "moduleResolution": "Node",
         "module": "ES2020",
 
