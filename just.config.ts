@@ -26,7 +26,7 @@ const paths = {
 
 export const config = {
   projectName,
-  project: paths.project, // <- adiciona aqui
+  project: paths.project,
   entry: path.join(paths.root, "tscripts/main.ts"),
   outFile: path.join(paths.dist, "scripts/main.js"),
   behaviorPack: path.join(paths.project, "behavior_pack"),
