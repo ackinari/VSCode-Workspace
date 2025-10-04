@@ -549,7 +549,7 @@ export function newProjectTask(rootPath) {
     }
 }
 
-// Validation utilities
+//! remove later:
 function validateManifest(manifestPath, packType) {
     try {
         const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
