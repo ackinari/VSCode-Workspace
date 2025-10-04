@@ -1,39 +1,53 @@
 {
-    "name": "minecraft-bedrock-workspace",
+    "name": "workspace",
     "version": "1.0.0",
     "description": "TypeScript Workspace",
     "author": "aKiNaRi",
-    "license": "MIT",
     "private": true,
     "devDependencies": {
-        "@minecraft/core-build-tasks": "^5.5.0",
+        "@rushstack/node-core-library": "^3.66.1",
+        "@types/node": "^22.7.4",
+        "@types/rimraf": "^3.0.2",
+        "dotenv": "^16.4.5",
+        "esbuild": "^0.23.0",
+        "just-scripts": "^2.0.0",
+        "rimraf": "^5.0.5",
         "ts-node": "^10.9.2",
-        "typescript": "^5.5.4"
+        "typescript": "^5.5.4",
+        "zip-lib": "^1.0.6"
     },
     "dependencies": {
         "@minecraft/math": "^2.2.7",
-        "@minecraft/server": "^2.2.0",
+        "@minecraft/server": "^2.0.0",
         "@minecraft/server-ui": "^2.0.0",
-        "@minecraft/vanilla-data": "^1.21.90"
+        "@minecraft/vanilla-data": "^1.21.90",
+        "prettier": "^3.6.2"
     },
-    "main": "scripts/workspace-manager.js",
     "scripts": {
-        "start-current": "node scripts/workspace-manager.js start-current",
-        "start-typescript": "node scripts/workspace-manager.js start-typescript",
-        "build-current": "node scripts/workspace-manager.js build-current",
-        "build-typescript": "node scripts/workspace-manager.js build-typescript",
-        "build-script": "node scripts/workspace-manager.js build-script-current",
-        "build-priority": "node scripts/workspace-manager.js build-priority-current",
-        "sync-development": "node scripts/workspace-manager.js sync-development",
-        "debug": "node scripts/workspace-manager.js debug",
-        "list-projects": "node scripts/workspace-manager.js list",
-        "list-libraries": "node scripts/workspace-manager.js list-libraries",
-        "create-project": "node scripts/scripts/create-project.js",
-        "create-library": "node scripts/scripts/create-library.js",
-        "new-project": "node scripts/scripts/new-project.js",
-        "generate-types": "node scripts/scripts/generate-library-types.js"
+        "debug": "just-scripts debug",
+        "typescript": "just-scripts typescript",
+        "bundle": "just-scripts bundle",
+        "build": "just-scripts build",
+        "clean-local": "just-scripts clean-local",
+        "clean-collateral": "just-scripts clean-collateral",
+        "clean": "just-scripts clean",
+        "copyArtifacts": "just-scripts copyArtifacts",
+        "local-deploy": "just-scripts local-deploy",
+        "watch": "just-scripts local-deploy --watch",
+        "lint": "just-scripts lint",
+        "mcaddon": "just-scripts mcaddon",
+        "enablemcloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-1958404141-86561845-1752920682-3514627264-368642714-62675701-733520436",
+        "enablemcpreviewloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-424268864-5579737-879501358-346833251-474568803-887069379-4040235476",
+        "buildsnippets": "just-scripts buildSnippets"
     },
-    "keywords": ["minecraft","bedrock","typescript","javascript","workspace","development"],
+    "keywords": [
+        "minecraft",
+        "bedrock",
+        "typescript",
+        "javascript",
+        "workspace",
+        "development"
+    ],
     "repository": {
         "type": "git",
         "url": "https://github.com/ackinari/VSCode-Workspace.git"

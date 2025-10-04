@@ -2,24 +2,123 @@
   "version": "2.0.0",
   "tasks": [
     {
-        "label": "test",
-        "type": "shell",
-        "command": "echo",
-        "args": ["${fileDirname}"],
+        "label": "debug",
+        "type": "npm",
+        "script": "debug",
         "options": {
-          "cwd": "${workspaceFolder}"
-        }
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
     },
     {
-        "label": "local-deploy",
+        "label": "typescript",
         "type": "npm",
-        "script": "local-deploy",
+        "script": "typescript",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "bundle",
+        "type": "npm",
+        "script": "bundle",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "build",
+        "type": "npm",
+        "script": "build",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
         "problemMatcher": []
     },
     {
         "label": "clean",
         "type": "npm",
         "script": "clean",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "clean",
+        "type": "npm",
+        "script": "clean",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "clean",
+        "type": "npm",
+        "script": "clean",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "copyArtifacts",
+        "type": "npm",
+        "script": "copyArtifacts",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "local",
+        "type": "npm",
+        "script": "local",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
+        "problemMatcher": []
+    },
+    {
+        "label": "watch",
+        "type": "npm",
+        "script": "watch",
+        "options": {
+          "cwd": "${workspaceFolder}",
+          "env": {
+            "REAL_CWD": "${workspaceFolder}"
+          }
+        },
         "problemMatcher": []
     }
   ]

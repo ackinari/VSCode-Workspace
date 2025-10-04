@@ -28,9 +28,8 @@
         // "checkJs": false, //*
 
         //? = = = others = = =
-        // "outDir": "lib",
+        // "outDir": "projects/lib",
         // "rootDir": ".",
-        // "baseUrl": "behavior_packs/",
         "listFiles": false,
         "noEmitHelpers": true,
         "skipLibCheck": true,
@@ -40,6 +39,11 @@
         //     "libraries/*": ["./libraries/*"]
         // }
     },
-    "include": ["projects/**/behavior_pack/tscripts/**/*"], // "libraries/**/*"
-    "exclude": ["node_modules"]
+    "include": [
+            "projects/**/tscripts/**/*",
+            "projects/**/scripts/**/*"
+        ], // "libraries/**/*"
+    "exclude": [
+        "node_modules", "projects/**/behavior_pack/scripts/**/*"
+    ]
 }
