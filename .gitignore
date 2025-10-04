@@ -25,5 +25,6 @@ yarn-error.log*
 TODO.md
 package-lock.json
 
-# Project
+# Ignora tudo dentro de projects
 projects/*
+!projects/templates/
