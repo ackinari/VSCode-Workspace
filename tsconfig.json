@@ -36,10 +36,10 @@
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
 
-        "paths": {
-            "libraries/*": ["./libraries/*"]
-        }
+        // "paths": {
+        //     "libraries/*": ["./libraries/*"]
+        // }
     },
-    "include": ["projects/**/behavior_pack/tscripts/**/*", "libraries/**/*"],
+    "include": ["projects/**/behavior_pack/tscripts/**/*"], // "libraries/**/*"
     "exclude": ["node_modules"]
 }
