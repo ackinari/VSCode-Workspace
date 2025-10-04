@@ -62,19 +62,23 @@ Run these tasks from inside a project (e.g., `cd projects/your_project`):
 - `npm run update-workspace` - Update workspace with newest template configurations
 
 # How to Use
-1. **Create a new project:**
+1. **Install dependencies:**
+   ```bash
+   npm i
+   ```
+2. **Create a new project:**
    ```bash
    npm run new-project
    ```
-2. **Navigate to your project:**
+3. **Navigate to your project:**
    ```bash
    cd projects/nome_do_projeto
    ```
-3. **Develop and test:**
+4. **Develop and test:**
    ```bash
    npm run watch  # Start development with auto-deploy
    ```
-4. **Create the final package:**
+5. **Create the final package:**
    ```bash
    npm run mcaddon  # Generate the .mcaddon file
    ```
