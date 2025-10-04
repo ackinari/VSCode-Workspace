@@ -95,7 +95,6 @@ export function bundleTask(options) {
         if (buildResult.errors.length === 0) {
             if (isRequiredToMakeChanges) {
                 if (!buildResult.outputFiles) {
-                    process.exitCode = 1
                     return Promise.reject(new Error('No output files were generated, check that your entrypoint file is configured correctly.'))
                 }
                 const result = postProcessOutputFiles(options, buildResult)
@@ -103,10 +102,8 @@ export function bundleTask(options) {
                     writeFiles(result)
                 }
             }
-            process.exitCode = 0
             return Promise.resolve()
         }
-        process.exitCode = 1
         return Promise.reject(new Error(buildResult.errors.join('\n')))
     }
 }
@@ -357,18 +354,52 @@ function zipTask(outputFile, zipContents) {
     }
 }
 export function mcaddonTask(params) {
-    const targetFolder = path.parse(params.outputFile).dir
-    const outputFileName = path.parse(params.outputFile).name
-    const behaviorPackFile = path.join(targetFolder, `${outputFileName}_bp.mcpack`)
-    const resourcePackFile = path.join(targetFolder, `${outputFileName}_rp.mcpack`)
-    const mcaddonContents = {contents: [behaviorPackFile]}
-    if (params.copyToResourcePacks && params.copyToResourcePacks.length > 0) {
-        mcaddonContents.contents.push(resourcePackFile)
+    return () => {
+        const behaviorPackPath = params.copyToBehaviorPacks[0]
+        const projectDir = path.dirname(behaviorPackPath)
+        const projectName = path.basename(projectDir)
+        const mcaddonFile = path.join(projectDir, `${projectName}.mcaddon`)
+        
+        console.log(`Creating .mcaddon package: ${mcaddonFile}`)
+        
+        try {
+            const zip = new zip_lib.Zip()
+            
+            // Add behavior pack
+            if (params.copyToBehaviorPacks && params.copyToBehaviorPacks.length > 0) {
+                const behaviorPackPath = params.copyToBehaviorPacks[0]
+                if (fs.existsSync(behaviorPackPath)) {
+                    console.log(`Adding behavior pack: ${behaviorPackPath}`)
+                    zip.addFolder(behaviorPackPath, `${projectName}_BP`)
+                }
+            }
+            
+            // Add resource pack
+            if (params.copyToResourcePacks && params.copyToResourcePacks.length > 0) {
+                const resourcePackPath = params.copyToResourcePacks[0]
+                if (fs.existsSync(resourcePackPath)) {
+                    console.log(`Adding resource pack: ${resourcePackPath}`)
+                    zip.addFolder(resourcePackPath, `${projectName}_RP`)
+                }
+            }
+            
+            // Create the archive
+            return zip.archive(mcaddonFile).then(
+                () => {
+                    console.log(`[SUCCESS] McAddon package created: ${mcaddonFile}`)
+                    return Promise.resolve()
+                },
+                (error) => {
+                    console.error(`[ERROR] Failed to create McAddon package: ${error}`)
+                    return Promise.reject(new Error(`Failed to create McAddon package: ${error}`))
+                }
+            )
+            
+        } catch (error) {
+            console.error(`[ERROR] McAddon task failed: ${error.message}`)
+            return Promise.reject(error)
+        }
     }
-    ;(0, just_scripts.task)('packBP', zipTask(behaviorPackFile, [{contents: params.copyToBehaviorPacks}, {contents: params.copyToScripts, targetPath: 'scripts'}]))
-    ;(0, just_scripts.task)('packRP', zipTask(resourcePackFile, [{contents: params.copyToResourcePacks ?? []}]))
-    ;(0, just_scripts.task)('packMcaddon', zipTask(params.outputFile, [mcaddonContents]))
-    return (0, just_scripts.series)((0, just_scripts.parallel)('packBP', 'packRP'), 'packMcaddon')
 }
 
 //! remove later:
@@ -569,7 +600,7 @@ function validateManifest(manifestPath, packType) {
     }
 }
 
-export function validateProjectTask(projectPath) {
+export function updateWorkspaceTask(projectPath, rootPath) {
     return () => {
         // Check if we're in a valid project directory
         if (!fs.existsSync(projectPath) || !projectPath.includes('projects')) {
@@ -579,76 +610,59 @@ export function validateProjectTask(projectPath) {
             return
         }
 
-        console.log('Validating project structure and manifests...\n')
+        console.clear()
+        console.log('Updating workspace configurations from template...\n')
 
-        const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
-        const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+        const templatePath = path.join(rootPath, 'projects', 'template')
+        
+        try {
+            // Files to update from template
+            const filesToUpdate = [
+                { src: '.vscode/tasks.json', dest: '.vscode/tasks.json', name: 'VS Code tasks' },
+                { src: '.vscode/settings.json', dest: '.vscode/settings.json', name: 'VS Code settings' },
+                { src: 'tsconfig.json', dest: 'tsconfig.json', name: 'TypeScript configuration' }
+            ]
 
-        let hasErrors = false
+            let updatedCount = 0
 
-        // Validate behavior pack
-        if (fs.existsSync(behaviorManifestPath)) {
-            console.log('Validating behavior pack manifest...')
-            const result = validateManifest(behaviorManifestPath, 'behavior')
-            if (result.valid) {
-                console.log('[PASS] Behavior pack manifest is valid')
-            } else {
-                console.log('[FAIL] Behavior pack manifest has issues:')
-                result.issues.forEach((issue) => console.log(`   - ${issue}`))
-                hasErrors = true
+            filesToUpdate.forEach(file => {
+                const srcPath = path.join(templatePath, file.src)
+                const destPath = path.join(projectPath, file.dest)
+
+                if (fs.existsSync(srcPath)) {
+                    try {
+                        // Create directory if it doesn't exist
+                        const destDir = path.dirname(destPath)
+                        if (!fs.existsSync(destDir)) {
+                            fs.mkdirSync(destDir, { recursive: true })
+                        }
+
+                        // Copy file
+                        rushstack.FileSystem.copyFiles({
+                            sourcePath: srcPath,
+                            destinationPath: destPath,
+                            preserveTimestamps: true,
+                        })
+
+                        console.log(`[SUCCESS] Updated ${file.name}`)
+                        updatedCount++
+                    } catch (error) {
+                        console.log(`[ERROR] Failed to update ${file.name}: ${error.message}`)
+                    }
+                } else {
+                    console.log(`[WARN] Template file not found: ${file.src}`)
+                }
+            })
+
+            console.log(`\n[COMPLETE] Updated ${updatedCount} configuration files`)
+            
+            if (updatedCount > 0) {
+                console.log('\n[INFO] Restart VS Code to apply the new configurations')
             }
-        } else {
-            console.log('[WARN] Behavior pack manifest not found')
-            hasErrors = true
-        }
 
-        console.log('')
-
-        // Validate resource pack
-        if (fs.existsSync(resourceManifestPath)) {
-            console.log('Validating resource pack manifest...')
-            const result = validateManifest(resourceManifestPath, 'resource')
-            if (result.valid) {
-                console.log('[PASS] Resource pack manifest is valid')
-            } else {
-                console.log('[FAIL] Resource pack manifest has issues:')
-                result.issues.forEach((issue) => console.log(`   - ${issue}`))
-                hasErrors = true
-            }
-        } else {
-            console.log('[WARN] Resource pack manifest not found')
-        }
-
-        console.log('')
-
-        // Check for common files
-        const commonChecks = [
-            {path: path.join(projectPath, 'tscripts'), name: 'TypeScript source directory', required: true},
-            {path: path.join(projectPath, 'behavior_pack', 'scripts'), name: 'Compiled scripts directory', required: false},
-            {path: path.join(projectPath, 'resource_pack', 'texts'), name: 'Language files directory', required: false},
-            {path: path.join(projectPath, 'tsconfig.json'), name: 'TypeScript configuration', required: true},
-        ]
-
-        console.log('Checking project structure...')
-        commonChecks.forEach((check) => {
-            if (fs.existsSync(check.path)) {
-                console.log(`[PASS] ${check.name} found`)
-            } else if (check.required) {
-                console.log(`[FAIL] ${check.name} missing (required)`)
-                hasErrors = true
-            } else {
-                console.log(`[WARN] ${check.name} missing (optional)`)
-            }
-        })
-
-        console.log('')
-
-        if (hasErrors) {
-            console.log('[RESULT] Project validation failed with errors')
+        } catch (error) {
+            console.error('[ERROR] Failed to update workspace:', error.message)
             process.exitCode = 1
-        } else {
-            console.log('[RESULT] Project validation passed!')
-            process.exitCode = 0
         }
     }
 }
@@ -1201,6 +1215,345 @@ export function openMinecraftFolderTask() {
             }
         } catch (error) {
             console.error('[ERROR] Failed to process selection:', error.message)
+        } finally {
+            rl.close()
+        }
+    }
+}
+
+export function cloneProjectTask(rootPath) {
+    return async () => {
+        console.clear()
+        console.log('Clone existing project...\n')
+
+        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
+
+        const askQuestion = (question) => {
+            return new Promise((resolve) => {
+                rl.question(question, (answer) => {
+                    resolve(answer.trim())
+                })
+            })
+        }
+
+        try {
+            const projectsDir = path.join(rootPath, 'projects')
+            if (!fs.existsSync(projectsDir)) {
+                console.log('[ERROR] Projects directory not found')
+                rl.close()
+                return
+            }
+
+            const projects = fs.readdirSync(projectsDir).filter((item) => {
+                const itemPath = path.join(projectsDir, item)
+                return fs.statSync(itemPath).isDirectory() && item !== 'template'
+            })
+
+            if (projects.length === 0) {
+                console.log('[INFO] No projects found to clone. Create one with: npm run new-project')
+                rl.close()
+                return
+            }
+
+            console.log('Available projects to clone:')
+            projects.forEach((project, index) => {
+                console.log(`${index + 1}. ${project}`)
+            })
+
+            const sourceChoice = await askQuestion('\nSelect project to clone (number): ')
+            const sourceIndex = parseInt(sourceChoice) - 1
+
+            if (sourceIndex < 0 || sourceIndex >= projects.length) {
+                console.log('[ERROR] Invalid project selection')
+                rl.close()
+                return
+            }
+
+            const sourceProject = projects[sourceIndex]
+            const sourcePath = path.join(projectsDir, sourceProject)
+
+            const newProjectName = await askQuestion('Enter new project name: ')
+            if (!newProjectName) {
+                console.log('[ERROR] Project name cannot be empty')
+                rl.close()
+                return
+            }
+
+            const cleanProjectName = newProjectName.replace(/['"]/g, '').trim()
+            const folderName = cleanProjectName.replace(/\s+/g, '_')
+            const newProjectPath = path.join(projectsDir, folderName)
+
+            if (fs.existsSync(newProjectPath)) {
+                console.log(`[ERROR] Project "${cleanProjectName}" already exists`)
+                rl.close()
+                return
+            }
+
+            console.log(`\nCloning "${sourceProject}" to "${cleanProjectName}"...`)
+
+            // Copy project
+            rushstack.FileSystem.copyFiles({
+                sourcePath: sourcePath,
+                destinationPath: newProjectPath,
+                preserveTimestamps: true,
+            })
+
+            // Generate new UUIDs
+            const behaviorHeaderUuid = crypto.randomUUID()
+            const behaviorModuleUuid = crypto.randomUUID()
+            const resourceHeaderUuid = crypto.randomUUID()
+            const resourceModuleUuid = crypto.randomUUID()
+
+            // Update behavior pack manifest
+            const behaviorManifestPath = path.join(newProjectPath, 'behavior_pack', 'manifest.json')
+            if (fs.existsSync(behaviorManifestPath)) {
+                const behaviorManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                behaviorManifest.header.uuid = behaviorHeaderUuid
+                if (behaviorManifest.modules && behaviorManifest.modules[0]) {
+                    behaviorManifest.modules[0].uuid = behaviorModuleUuid
+                }
+                if (behaviorManifest.dependencies && behaviorManifest.dependencies[0]) {
+                    behaviorManifest.dependencies[0].uuid = resourceHeaderUuid
+                }
+                fs.writeFileSync(behaviorManifestPath, JSON.stringify(behaviorManifest, null, 4))
+            }
+
+            // Update resource pack manifest
+            const resourceManifestPath = path.join(newProjectPath, 'resource_pack', 'manifest.json')
+            if (fs.existsSync(resourceManifestPath)) {
+                const resourceManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+                resourceManifest.header.uuid = resourceHeaderUuid
+                if (resourceManifest.modules && resourceManifest.modules[0]) {
+                    resourceManifest.modules[0].uuid = resourceModuleUuid
+                }
+                if (resourceManifest.dependencies && resourceManifest.dependencies[0]) {
+                    resourceManifest.dependencies[0].uuid = behaviorHeaderUuid
+                }
+                fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4))
+            }
+
+            // Update language file
+            const langFilePath = path.join(newProjectPath, 'resource_pack', 'texts', 'en_US.lang')
+            if (fs.existsSync(langFilePath)) {
+                const langContent = fs.readFileSync(langFilePath, 'utf8')
+                const updatedLangContent = langContent.replace(/pack\.name=.*/g, `pack.name=${cleanProjectName}`)
+                fs.writeFileSync(langFilePath, updatedLangContent)
+            }
+
+            console.log(`\n[SUCCESS] Project cloned successfully!`)
+            console.log(`Source: ${sourceProject}`)
+            console.log(`New project: ${cleanProjectName}`)
+            console.log(`Location: ${newProjectPath}`)
+            console.log(`\n[INFO] New UUIDs generated automatically`)
+
+        } catch (error) {
+            console.error('[ERROR] Failed to clone project:', error.message)
+        } finally {
+            rl.close()
+        }
+    }
+}
+
+export function deleteProjectTask(rootPath) {
+    return async () => {
+        console.clear()
+        console.log('Delete project...\n')
+
+        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
+
+        const askQuestion = (question) => {
+            return new Promise((resolve) => {
+                rl.question(question, (answer) => {
+                    resolve(answer.trim())
+                })
+            })
+        }
+
+        try {
+            const projectsDir = path.join(rootPath, 'projects')
+            if (!fs.existsSync(projectsDir)) {
+                console.log('[ERROR] Projects directory not found')
+                rl.close()
+                return
+            }
+
+            const projects = fs.readdirSync(projectsDir).filter((item) => {
+                const itemPath = path.join(projectsDir, item)
+                return fs.statSync(itemPath).isDirectory() && item !== 'template'
+            })
+
+            if (projects.length === 0) {
+                console.log('[INFO] No projects found to delete')
+                rl.close()
+                return
+            }
+
+            console.log('Available projects to delete:')
+            projects.forEach((project, index) => {
+                console.log(`${index + 1}. ${project}`)
+            })
+
+            const choice = await askQuestion('\nSelect project to delete (number): ')
+            const projectIndex = parseInt(choice) - 1
+
+            if (projectIndex < 0 || projectIndex >= projects.length) {
+                console.log('[ERROR] Invalid project selection')
+                rl.close()
+                return
+            }
+
+            const projectToDelete = projects[projectIndex]
+            const projectPath = path.join(projectsDir, projectToDelete)
+
+            console.log(`\n[WARNING] You are about to delete project: ${projectToDelete}`)
+            console.log(`Location: ${projectPath}`)
+            console.log('\nThis action cannot be undone!')
+
+            const confirmation1 = await askQuestion('\nType the project name to confirm deletion: ')
+            if (confirmation1 !== projectToDelete) {
+                console.log('[INFO] Deletion cancelled - project name did not match')
+                rl.close()
+                return
+            }
+
+            const confirmation2 = await askQuestion('Are you absolutely sure? (yes/no): ')
+            if (confirmation2.toLowerCase() !== 'yes') {
+                console.log('[INFO] Deletion cancelled')
+                rl.close()
+                return
+            }
+
+            console.log(`\nDeleting project "${projectToDelete}"...`)
+
+            try {
+                rimraf.sync(projectPath)
+                console.log(`[SUCCESS] Project "${projectToDelete}" deleted successfully`)
+            } catch (error) {
+                console.error(`[ERROR] Failed to delete project: ${error.message}`)
+            }
+
+        } catch (error) {
+            console.error('[ERROR] Failed to delete project:', error.message)
+        } finally {
+            rl.close()
+        }
+    }
+}
+
+export function renameProjectTask(rootPath) {
+    return async () => {
+        console.clear()
+        console.log('Rename project...\n')
+
+        const rl = readline.createInterface({input: process.stdin, output: process.stdout})
+
+        const askQuestion = (question) => {
+            return new Promise((resolve) => {
+                rl.question(question, (answer) => {
+                    resolve(answer.trim())
+                })
+            })
+        }
+
+        try {
+            const projectsDir = path.join(rootPath, 'projects')
+            if (!fs.existsSync(projectsDir)) {
+                console.log('[ERROR] Projects directory not found')
+                rl.close()
+                return
+            }
+
+            const projects = fs.readdirSync(projectsDir).filter((item) => {
+                const itemPath = path.join(projectsDir, item)
+                return fs.statSync(itemPath).isDirectory() && item !== 'template'
+            })
+
+            if (projects.length === 0) {
+                console.log('[INFO] No projects found to rename')
+                rl.close()
+                return
+            }
+
+            console.log('Available projects to rename:')
+            projects.forEach((project, index) => {
+                console.log(`${index + 1}. ${project}`)
+            })
+
+            const choice = await askQuestion('\nSelect project to rename (number): ')
+            const projectIndex = parseInt(choice) - 1
+
+            if (projectIndex < 0 || projectIndex >= projects.length) {
+                console.log('[ERROR] Invalid project selection')
+                rl.close()
+                return
+            }
+
+            const oldProjectName = projects[projectIndex]
+            const oldProjectPath = path.join(projectsDir, oldProjectName)
+
+            const newProjectName = await askQuestion('Enter new project name: ')
+            if (!newProjectName) {
+                console.log('[ERROR] Project name cannot be empty')
+                rl.close()
+                return
+            }
+
+            const cleanProjectName = newProjectName.replace(/['"]/g, '').trim()
+            const newFolderName = cleanProjectName.replace(/\s+/g, '_')
+            const newProjectPath = path.join(projectsDir, newFolderName)
+
+            if (fs.existsSync(newProjectPath)) {
+                console.log(`[ERROR] Project "${cleanProjectName}" already exists`)
+                rl.close()
+                return
+            }
+
+            console.log(`\nRenaming "${oldProjectName}" to "${cleanProjectName}"...`)
+
+            // Copy to new location
+            rushstack.FileSystem.copyFiles({
+                sourcePath: oldProjectPath,
+                destinationPath: newProjectPath,
+                preserveTimestamps: true,
+            })
+
+            // Update language file
+            const langFilePath = path.join(newProjectPath, 'resource_pack', 'texts', 'en_US.lang')
+            if (fs.existsSync(langFilePath)) {
+                const langContent = fs.readFileSync(langFilePath, 'utf8')
+                const updatedLangContent = langContent.replace(/pack\.name=.*/g, `pack.name=${cleanProjectName}`)
+                fs.writeFileSync(langFilePath, updatedLangContent)
+            }
+
+            // Update manifest names if they reference the old project name
+            const behaviorManifestPath = path.join(newProjectPath, 'behavior_pack', 'manifest.json')
+            if (fs.existsSync(behaviorManifestPath)) {
+                const behaviorManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                if (behaviorManifest.header && behaviorManifest.header.name === oldProjectName) {
+                    behaviorManifest.header.name = cleanProjectName
+                    fs.writeFileSync(behaviorManifestPath, JSON.stringify(behaviorManifest, null, 4))
+                }
+            }
+
+            const resourceManifestPath = path.join(newProjectPath, 'resource_pack', 'manifest.json')
+            if (fs.existsSync(resourceManifestPath)) {
+                const resourceManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+                if (resourceManifest.header && resourceManifest.header.name === oldProjectName) {
+                    resourceManifest.header.name = cleanProjectName
+                    fs.writeFileSync(resourceManifestPath, JSON.stringify(resourceManifest, null, 4))
+                }
+            }
+
+            // Remove old project
+            rimraf.sync(oldProjectPath)
+
+            console.log(`\n[SUCCESS] Project renamed successfully!`)
+            console.log(`Old name: ${oldProjectName}`)
+            console.log(`New name: ${cleanProjectName}`)
+            console.log(`Location: ${newProjectPath}`)
+
+        } catch (error) {
+            console.error('[ERROR] Failed to rename project:', error.message)
         } finally {
             rl.close()
         }
