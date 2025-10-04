@@ -72,7 +72,7 @@ Run these tasks from inside a project (e.g., `cd projects/your_project`):
    ```
 3. **Navigate to your project:**
    ```bash
-   cd projects/nome_do_projeto
+   cd projects/project-name
    ```
 4. **Develop and test:**
    ```bash
