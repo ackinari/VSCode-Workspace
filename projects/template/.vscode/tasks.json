@@ -1,104 +1,243 @@
 {
     "version": "2.0.0",
     "tasks": [
-      {
-        "label": "debug",
-        "type": "npm",
-        "script": "debug",
-        "detail": "Prints project and directory info for debugging",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Debug",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "debug"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Show current project information and debug details"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "typescript",
-        "type": "npm",
-        "script": "typescript",
-        "detail": "Compiles TypeScript files into JavaScript",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "TypeScript Compile",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "typescript"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Compile TypeScript files to JavaScript"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "build",
-        "type": "npm",
-        "script": "build",
-        "detail": "Builds the project (TypeScript + bundle)",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Bundle",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "bundle"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Create optimized bundle for production"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "clean",
-        "type": "npm",
-        "script": "clean",
-        "detail": "Removes all build artifacts and temp files",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "build"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Compile TypeScript and create bundle"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "clean-local",
-        "type": "npm",
-        "script": "clean-local",
-        "detail": "Cleans local build directories",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Clean Local",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "clean-local"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Remove compiled scripts from project"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "clean-collateral",
-        "type": "npm",
-        "script": "clean-collateral",
-        "detail": "Cleans generated development folders",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Clean Collateral",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "clean-collateral"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Remove project files from Minecraft directories"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "copyArtifacts",
-        "type": "npm",
-        "script": "copyArtifacts",
-        "detail": "Copies behavior and resource packs to dev folder",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Clean All",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "clean"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Remove all generated files"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "local-deploy",
-        "type": "npm",
-        "script": "local-deploy",
-        "detail": "Builds and deploys files locally with file watching",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Copy Artifacts",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "copyArtifacts"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Deploy project files to Minecraft directories"
         },
-        "problemMatcher": []
-      },
-      {
-        "label": "watch",
-        "type": "npm",
-        "script": "watch",
-        "detail": "Watches for file changes and rebuilds automatically",
-        "options": {
-          "cwd": "${workspaceFolder}",
-          "env": { "REAL_CWD": "${workspaceFolder}" }
+        {
+            "label": "Local Deploy",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "local-deploy"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Deploy project to local Minecraft installation"
         },
-        "problemMatcher": []
-      }
+        {
+            "label": "Watch",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "watch"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Watch files and auto-deploy changes"
+        },
+        {
+            "label": "Lint",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "lint"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Check code quality and formatting"
+        },
+        {
+            "label": "Create McAddon",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "mcaddon"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Build and package project as .mcaddon file"
+        },
+        {
+            "label": "Validate Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "validate"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Validate project structure and manifests"
+        },
+        {
+            "label": "Analyze Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "analyze"],
+            "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Analyze project statistics and structure"
+        },
+        {
+            "label": "Backup Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "backup"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Create compressed backup of current project"
+        },
+        {
+            "label": "Update Version",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "update-version"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Update project version in manifests"
+        },
+        {
+            "label": "Generate UUIDs",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "generate-uuids"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Generate new UUIDs for project manifests"
+        }
     ]
-  }  
+}
