@@ -15,10 +15,10 @@
     },
     "files.exclude": {
         "**/node_modules": true,
-        // "**/package.json": true,
         "**/package-lock.json": true,
-        // "**/tsconfig.json": true,
         "**/tsconfig.temp.json": true,
+        // "**/package.json": true,
+        // "**/tsconfig.json": true,
 
         "**/.git": true,
         "**/.DS_Store": true
