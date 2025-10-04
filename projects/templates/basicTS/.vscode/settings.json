@@ -1,0 +1,31 @@
+{
+    //? important
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "prettier.configPath": "../../.prettierrc.json",
+
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/package.json": true,
+        "**/package-lock.json": true,
+        "**/tsconfig.json": true,
+        "**/tsconfig.temp.json": true,
+
+        "**/.git": true,
+        "**/.DS_Store": true
+    },
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/package.json": true,
+        "**/package-lock.json": true,
+        "**/tsconfig.json": true,
+        "**/tsconfig.temp.json": true,
+
+        "**/.git": true,
+        "**/.DS_Store": true
+    },
+    "eslint.useFlatConfig": true,
+
+    //? user preferences
+    "editor.tabSize": 4,
+    "editor.formatOnSave": false
+}

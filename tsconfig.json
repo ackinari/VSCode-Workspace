@@ -37,7 +37,7 @@
         "skipDefaultLibCheck": true,
 
         "paths": {
-            "libraries/*": ["libraries/*"]
+            "libraries/*": ["./libraries/*"]
         }
     },
     "include": ["projects/**/behavior_pack/tscripts/**/*", "libraries/**/*"],
