@@ -1,7 +1,7 @@
 {
     //? important
     "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "prettier.configPath": "../../.prettierrc.json",
+    "prettier.configPath": "./.prettierrc.json",
 
     "search.exclude": {
         "**/node_modules": true,
