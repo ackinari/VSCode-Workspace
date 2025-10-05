@@ -1,10 +1,10 @@
 {
+    "ignoreDeprecations": "6.0",
     "compilerOptions": {
         //? = = = important = = =
         "target": "es6",
-        "ignoreDeprecations": "6.0",
-        "moduleResolution": "Node",
-        "module": "ES2020",
+        "moduleResolution": "node",
+        "module": "es2020",
 
         "declaration": false,
         "noLib": false,

@@ -16,7 +16,7 @@
         "just-scripts": "^2.0.0",
         "rimraf": "^5.0.5",
         "ts-node": "^10.9.2",
-        "typescript": "^5.5.4",
+        "typescript": "^5.9.3",
         "zip-lib": "^1.0.6"
     },
     "dependencies": {
@@ -51,11 +51,17 @@
         "delete-project": "just-scripts delete-project",
         "rename-project": "just-scripts rename-project",
         "open-project": "just-scripts open-project",
-
         "enablemcloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-1958404141-86561845-1752920682-3514627264-368642714-62675701-733520436",
         "enablemcpreviewloopback": "CheckNetIsolation.exe LoopbackExempt -a -p=S-1-15-2-424268864-5579737-879501358-346833251-474568803-887069379-4040235476"
     },
-    "keywords": ["minecraft","bedrock","typescript","javascript","workspace","development"],
+    "keywords": [
+        "minecraft",
+        "bedrock",
+        "typescript",
+        "javascript",
+        "workspace",
+        "development"
+    ],
     "repository": {
         "type": "git",
         "url": "https://github.com/ackinari/VSCode-Workspace.git"
