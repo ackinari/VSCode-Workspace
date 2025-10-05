@@ -129,14 +129,14 @@ task(TASKS.TYPESCRIPT, tscTask(typescriptOptions));
 task(TASKS.BUNDLE, bundleTask(bundleTaskOptions));
 task(TASKS.BUILD, series(TASKS.TYPESCRIPT, TASKS.BUNDLE));
 
-task(TASKS.CLEAN_LOCAL, cleanTask([typescriptOptions.outDir]));
+task(TASKS.CLEAN_LOCAL, cleanTask([typescriptOptions.outDir as string]));
 task(TASKS.CLEAN_COLLATERAL, cleanCollateralTask(STANDARD_CLEAN_PATHS, config.projectName));
 task(TASKS.CLEAN, parallel(TASKS.CLEAN_LOCAL, TASKS.CLEAN_COLLATERAL));
 
 task(TASKS.COPY, copyTask(copyTaskOptions, config.projectName));
 task(TASKS.PACKAGE, series(TASKS.CLEAN_COLLATERAL, TASKS.COPY));
 
-task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE)));
+task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE) as any));
 
 task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions));
 task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.BUILD, TASKS.CREATE_MCADDON));
