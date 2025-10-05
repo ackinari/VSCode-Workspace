@@ -8,6 +8,8 @@
             "args": ["run", "new-project"],
             "group": "build",
             "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
                 "focus": true,
             },
             "detail": "Create new project from template"
@@ -19,6 +21,8 @@
             "args": ["run", "clone-project"],
             "group": "build",
             "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
                 "focus": true,
             },
             "detail": "Clone existing project with new UUIDs and name"
@@ -30,6 +34,8 @@
             "args": ["run", "delete-project"],
             "group": "build",
             "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
                 "focus": true,
             },
             "detail": "Delete project from workspace (with confirmation)",
@@ -45,6 +51,8 @@
             "args": ["run", "rename-project"],
             "group": "build",
             "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
                 "focus": true,
             },
             "detail": "Rename project directory and update manifests"
@@ -56,6 +64,8 @@
             "args": ["run", "open-project"],
             "group": "build",
             "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
                 "focus": true,
             },
             "detail": "Open project directory in VSCode"
