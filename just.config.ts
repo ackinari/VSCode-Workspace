@@ -141,7 +141,8 @@ task(TASKS.PACKAGE, series(TASKS.CLEAN_COLLATERAL, TASKS.COPY));
 
 task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE) as any));
 
-task(TASKS.MCADDON, mcaddonTask(mcaddonTaskOptions));
+task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions));
+task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE, TASKS.CREATE_MCADDON));
 
 task(TASKS.NEW_PROJECT, newProjectTask(paths.root));
 
