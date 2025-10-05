@@ -231,8 +231,33 @@
             "presentation": {
                 "showReuseMessage": false,
                 "clear": true,
+                "focus": true
             },
             "detail": "Open Minecraft development folders"
+        },
+        {
+            "label": "List Development Projects",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "list-development-projects"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+            },
+            "detail": "List all projects deployed to Minecraft folders"
+        },
+        {
+            "label": "Open Workspace",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "open-workspace"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+            },
+            "detail": "Open workspace root in VS Code"
         }
     ]
 }

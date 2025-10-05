@@ -22,6 +22,9 @@ import {
   deleteProjectTask,
   renameProjectTask,
   openProjectTask,
+  listDevelopmentProjectsTask,
+  openWorkspaceTask,
+  debugTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -114,14 +117,13 @@ const TASKS = {
   DELETE_PROJECT: "delete-project",
   RENAME_PROJECT: "rename-project",
   OPEN_PROJECT: "open-project",
+  LIST_DEVELOPMENT_PROJECTS: "list-development-projects",
+  OPEN_WORKSPACE: "open-workspace",
 } as const;
 
 //§e = = = = = = = = tasks = = = = = = = = 
 
-task(TASKS.DEBUG, () => {
-  console.log("project:", config.projectName);
-  console.log("project dir:", projectDir);
-});
+task(TASKS.DEBUG, debugTask(paths.project));
 
 task(TASKS.LINT, coreLint(["scripts/**/*.ts"], argv().fix));
 
@@ -157,3 +159,5 @@ task(TASKS.CLONE_PROJECT, cloneProjectTask(paths.root));
 task(TASKS.DELETE_PROJECT, deleteProjectTask(paths.root));
 task(TASKS.RENAME_PROJECT, renameProjectTask(paths.root));
 task(TASKS.OPEN_PROJECT, openProjectTask(paths.root));
+task(TASKS.LIST_DEVELOPMENT_PROJECTS, listDevelopmentProjectsTask());
+task(TASKS.OPEN_WORKSPACE, openWorkspaceTask(paths.root));

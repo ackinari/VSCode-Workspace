@@ -69,6 +69,18 @@
                 "focus": true,
             },
             "detail": "Open project directory in VSCode"
+        },
+        {
+            "label": "List Development Projects",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "list-development-projects"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+            },
+            "detail": "List all projects deployed to Minecraft folders"
         }
     ]
 }
