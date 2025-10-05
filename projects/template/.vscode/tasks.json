@@ -136,7 +136,8 @@
                 "showReuseMessage": false,
                 "clear": true,
             },
-            "detail": "Check code quality and formatting"
+            "detail": "Check code quality and formatting",
+            "hide": true
         },
         {
             "label": "Create McAddon",
