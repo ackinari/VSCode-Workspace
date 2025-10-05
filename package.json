@@ -1,5 +1,5 @@
 {
-    "name": "workspace",
+    "name": "@akinari/bedrock-workspace",
     "version": "1.0.0",
     "description": "TypeScript Workspace",
     "author": "aKiNaRi",
