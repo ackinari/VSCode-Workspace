@@ -17,14 +17,14 @@
         "rimraf": "^5.0.5",
         "ts-node": "^10.9.2",
         "typescript": "^5.9.3",
-        "zip-lib": "^1.0.6"
+        "zip-lib": "^1.0.6",
+        "prettier": "^3.6.2"
     },
     "dependencies": {
         "@minecraft/math": "^2.2.7",
         "@minecraft/server": "^2.0.0",
         "@minecraft/server-ui": "^2.0.0",
-        "@minecraft/vanilla-data": "^1.21.90",
-        "prettier": "^3.6.2"
+        "@minecraft/vanilla-data": "^1.21.90"
     },
     "scripts": {
         "debug": "cross-env \"REAL_CWD=%CD%\" just-scripts debug",

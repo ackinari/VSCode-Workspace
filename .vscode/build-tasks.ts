@@ -240,35 +240,23 @@ function updateProjectName(projectPath: string, newName: string): void {
 }
 
 /**
- * Updates project description in manifests (both resource and behavior packs)
+ * Updates project description in language files (both resource and behavior packs)
  */
 function updateProjectDescription(projectPath: string, newDescription: string): void {
-    // Update behavior pack manifest
-    const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
-    if (fs.existsSync(behaviorManifestPath)) {
-        try {
-            const manifest: ProjectManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
-            if (manifest.header) {
-                manifest.header.description = newDescription
-                fs.writeFileSync(behaviorManifestPath, JSON.stringify(manifest, null, 4))
-            }
-        } catch (error) {
-            console.log(chalk.yellow('⚠ Failed to update behavior pack description'))
-        }
+    // Update resource pack language file
+    const resourceLangFilePath = path.join(projectPath, 'resource_pack', 'texts', 'en_US.lang')
+    if (fs.existsSync(resourceLangFilePath)) {
+        const langContent = fs.readFileSync(resourceLangFilePath, 'utf8')
+        const updatedLangContent = langContent.replace(/pack\.description=.*/g, `pack.description=${newDescription}`)
+        fs.writeFileSync(resourceLangFilePath, updatedLangContent)
     }
 
-    // Update resource pack manifest
-    const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
-    if (fs.existsSync(resourceManifestPath)) {
-        try {
-            const manifest: ProjectManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
-            if (manifest.header) {
-                manifest.header.description = newDescription
-                fs.writeFileSync(resourceManifestPath, JSON.stringify(manifest, null, 4))
-            }
-        } catch (error) {
-            console.log(chalk.yellow('⚠ Failed to update resource pack description'))
-        }
+    // Update behavior pack language file
+    const behaviorLangFilePath = path.join(projectPath, 'behavior_pack', 'texts', 'en_US.lang')
+    if (fs.existsSync(behaviorLangFilePath)) {
+        const langContent = fs.readFileSync(behaviorLangFilePath, 'utf8')
+        const updatedLangContent = langContent.replace(/pack\.description=.*/g, `pack.description=${newDescription}`)
+        fs.writeFileSync(behaviorLangFilePath, updatedLangContent)
     }
 }
 
@@ -1529,6 +1517,26 @@ export function generateUuidsTask(projectPath: string): TaskFunction {
                 console.log(chalk.green('✓ Resource pack UUIDs updated'))
             }
 
+            // Run prettier on the updated files
+            console.log(chalk.gray('Running prettier on updated files...'))
+            try {
+                const workspaceRoot = path.resolve(projectPath, '..', '..')
+                if (fs.existsSync(behaviorManifestPath)) {
+                    child_process.execSync(`npx prettier --write "${behaviorManifestPath}"`, {
+                        stdio: 'inherit',
+                        cwd: workspaceRoot
+                    })
+                }
+                if (fs.existsSync(resourceManifestPath)) {
+                    child_process.execSync(`npx prettier --write "${resourceManifestPath}"`, {
+                        stdio: 'inherit',
+                        cwd: workspaceRoot
+                    })
+                }
+            } catch (error) {
+                console.log(chalk.yellow('⚠ Prettier formatting failed, but UUIDs were updated'))
+            }
+
             console.log('')
             console.log(chalk.white.bold('NEW UUIDS GENERATED'))
             console.log(`Behavior Header: ${uuids.behaviorHeaderUuid}`)
@@ -1749,9 +1757,16 @@ export function updateVersionTask(projectPath: string): TaskFunction {
             // Run prettier on the updated files
             console.log(chalk.gray('Running prettier on updated files...'))
             try {
-                child_process.execSync(`npx prettier --write "${behaviorManifestPath}"`, {stdio: 'inherit'})
+                const workspaceRoot = path.resolve(projectPath, '..', '..')
+                child_process.execSync(`npx prettier --write "${behaviorManifestPath}"`, {
+                    stdio: 'inherit',
+                    cwd: workspaceRoot
+                })
                 if (fs.existsSync(resourceManifestPath)) {
-                    child_process.execSync(`npx prettier --write "${resourceManifestPath}"`, {stdio: 'inherit'})
+                    child_process.execSync(`npx prettier --write "${resourceManifestPath}"`, {
+                        stdio: 'inherit',
+                        cwd: workspaceRoot
+                    })
                 }
             } catch (error) {
                 console.log(chalk.yellow('⚠ Prettier formatting failed, but version was updated'))
