@@ -100,8 +100,7 @@
                 "showReuseMessage": false,
                 "clear": true,
             },
-            "detail": "Deploy project files to Minecraft directories",
-            "hide": true
+            "detail": "Deploy project files to Minecraft directories"
         },
         {
             "label": "Local Deploy",
