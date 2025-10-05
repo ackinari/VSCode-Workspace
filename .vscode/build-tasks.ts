@@ -354,6 +354,58 @@ function quotePath(filePath: string): string {
 }
 
 /**
+ * Runs prettier on specified files
+ */
+function runPrettier(filePaths: string[], workspaceRoot?: string): boolean {
+    if (!filePaths || filePaths.length === 0) {
+        return true
+    }
+
+    try {
+        // Determine workspace root
+        let cwd = workspaceRoot
+        if (!cwd) {
+            // Try to find workspace root by looking for .prettierrc.json
+            let currentDir = process.cwd()
+            while (currentDir !== path.dirname(currentDir)) {
+                const prettierConfigPath = path.join(currentDir, '.prettierrc.json')
+                const packageJsonPath = path.join(currentDir, 'package.json')
+                if (fs.existsSync(prettierConfigPath) || fs.existsSync(packageJsonPath)) {
+                    cwd = currentDir
+                    break
+                }
+                currentDir = path.dirname(currentDir)
+            }
+            if (!cwd) {
+                cwd = process.cwd()
+            }
+        }
+
+        // Verify prettier config exists
+        const prettierConfigPath = path.join(cwd, '.prettierrc.json')
+        if (!fs.existsSync(prettierConfigPath)) {
+            console.log(chalk.yellow('⚠ .prettierrc.json not found, skipping formatting'))
+            return false
+        }
+
+        // Run prettier on all files at once for better performance
+        const quotedPaths = filePaths.map(filePath => quotePath(filePath))
+        const cmd = `npx prettier --write --config "${prettierConfigPath}" ${quotedPaths.join(' ')}`
+        
+        child_process.execSync(cmd, {
+            stdio: 'ignore', // Suppress prettier output
+            cwd: cwd
+        })
+        
+        console.log(chalk.gray('✓ Prettier formatting completed'))
+        return true
+    } catch (error: any) {
+        console.log(chalk.yellow('⚠ Prettier formatting failed, but files were updated'))
+        return false
+    }
+}
+
+/**
  * Opens a project in VS Code
  */
 function openInVSCode(projectPath: string): void {
@@ -1519,21 +1571,17 @@ export function generateUuidsTask(projectPath: string): TaskFunction {
 
             // Run prettier on the updated files
             console.log(chalk.gray('Running prettier on updated files...'))
-            try {
-                const workspaceRoot = path.resolve(projectPath, '..', '..')
-                if (fs.existsSync(behaviorManifestPath)) {
-                    child_process.execSync(`npx prettier --write "${behaviorManifestPath}"`, {
-                        stdio: 'inherit',
-                        cwd: workspaceRoot
-                    })
-                }
-                if (fs.existsSync(resourceManifestPath)) {
-                    child_process.execSync(`npx prettier --write "${resourceManifestPath}"`, {
-                        stdio: 'inherit',
-                        cwd: workspaceRoot
-                    })
-                }
-            } catch (error) {
+            const filesToFormat = []
+            if (fs.existsSync(behaviorManifestPath)) {
+                filesToFormat.push(behaviorManifestPath)
+            }
+            if (fs.existsSync(resourceManifestPath)) {
+                filesToFormat.push(resourceManifestPath)
+            }
+            
+            const workspaceRoot = path.resolve(projectPath, '..', '..')
+            const prettierSuccess = runPrettier(filesToFormat, workspaceRoot)
+            if (!prettierSuccess) {
                 console.log(chalk.yellow('⚠ Prettier formatting failed, but UUIDs were updated'))
             }
 
@@ -1756,19 +1804,14 @@ export function updateVersionTask(projectPath: string): TaskFunction {
 
             // Run prettier on the updated files
             console.log(chalk.gray('Running prettier on updated files...'))
-            try {
-                const workspaceRoot = path.resolve(projectPath, '..', '..')
-                child_process.execSync(`npx prettier --write "${behaviorManifestPath}"`, {
-                    stdio: 'inherit',
-                    cwd: workspaceRoot
-                })
-                if (fs.existsSync(resourceManifestPath)) {
-                    child_process.execSync(`npx prettier --write "${resourceManifestPath}"`, {
-                        stdio: 'inherit',
-                        cwd: workspaceRoot
-                    })
-                }
-            } catch (error) {
+            const filesToFormat = [behaviorManifestPath]
+            if (fs.existsSync(resourceManifestPath)) {
+                filesToFormat.push(resourceManifestPath)
+            }
+            
+            const workspaceRoot = path.resolve(projectPath, '..', '..')
+            const prettierSuccess = runPrettier(filesToFormat, workspaceRoot)
+            if (!prettierSuccess) {
                 console.log(chalk.yellow('⚠ Prettier formatting failed, but version was updated'))
             }
 
