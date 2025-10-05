@@ -8,7 +8,6 @@ import {
   cleanCollateralTask,
   copyTask,
   mcaddonTask,
-  setupEnvironment,
   watchTask,
   coreLint,
   newProjectTask,
@@ -22,6 +21,7 @@ import {
   cloneProjectTask,
   deleteProjectTask,
   renameProjectTask,
+  openProjectTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -55,7 +55,7 @@ export const config = {
   packageFile: path.join(paths.dist, "packages", `${actualProjectName}.mcaddon`),
 };
 
-//§e = = = = = = = = task options = = = = = = = = 
+//§e = = = = = = = = task configs = = = = = = = = 
 
 const bundleTaskOptions = {
   entryPoint: config.entry,
@@ -113,6 +113,7 @@ const TASKS = {
   CLONE_PROJECT: "clone-project",
   DELETE_PROJECT: "delete-project",
   RENAME_PROJECT: "rename-project",
+  OPEN_PROJECT: "open-project",
 } as const;
 
 //§e = = = = = = = = tasks = = = = = = = = 
@@ -155,3 +156,4 @@ task(TASKS.OPEN_MC_FOLDER, openMinecraftFolderTask());
 task(TASKS.CLONE_PROJECT, cloneProjectTask(paths.root));
 task(TASKS.DELETE_PROJECT, deleteProjectTask(paths.root));
 task(TASKS.RENAME_PROJECT, renameProjectTask(paths.root));
+task(TASKS.OPEN_PROJECT, openProjectTask(paths.root));

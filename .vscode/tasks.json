@@ -60,6 +60,20 @@
                 "panel": "shared"
             },
             "detail": "Rename project directory and update manifests"
+        },
+        {
+            "label": "Open Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "open-project"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            },
+            "detail": "Open project directory in VSCode"
         }
     ]
 }
