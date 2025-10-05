@@ -7,12 +7,6 @@
             "command": "npm",
             "args": ["run", "debug"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Show current project information and debug details"
         },
         {
@@ -24,12 +18,6 @@
                 "cwd": "${workspaceFolder}"
             },
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Compile TypeScript files to JavaScript"
         },
         {
@@ -38,12 +26,6 @@
             "command": "npm",
             "args": ["run", "bundle"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Create optimized bundle for production",
             "hide": true
         },
@@ -53,12 +35,6 @@
             "command": "npm",
             "args": ["run", "build"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Compile TypeScript and create bundle",
             "hide": true
         },
@@ -68,12 +44,6 @@
             "command": "npm",
             "args": ["run", "clean-local"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Remove compiled scripts from project"
         },
         {
@@ -82,12 +52,6 @@
             "command": "npm",
             "args": ["run", "clean-collateral"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Remove project files from Minecraft directories"
         },
         {
@@ -96,12 +60,6 @@
             "command": "npm",
             "args": ["run", "clean"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Remove all generated files"
         },
         {
@@ -110,12 +68,6 @@
             "command": "npm",
             "args": ["run", "copyArtifacts"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Deploy project files to Minecraft directories",
             "hide": true
         },
@@ -125,12 +77,6 @@
             "command": "npm",
             "args": ["run", "local-deploy"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Deploy project to local Minecraft installation"
         },
         {
@@ -139,12 +85,6 @@
             "command": "npm",
             "args": ["run", "watch"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Watch files and auto-deploy changes"
         },
         {
@@ -153,12 +93,6 @@
             "command": "npm",
             "args": ["run", "lint"],
             "group": "test",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Check code quality and formatting"
         },
         {
@@ -167,12 +101,6 @@
             "command": "npm",
             "args": ["run", "mcaddon"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Build and package project as .mcaddon file"
         },
         {
@@ -181,12 +109,6 @@
             "command": "npm",
             "args": ["run", "analyze"],
             "group": "test",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Analyze project statistics and structure"
         },
         {
@@ -195,12 +117,6 @@
             "command": "npm",
             "args": ["run", "backup"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Create compressed backup of current project"
         },
         {
@@ -210,10 +126,7 @@
             "args": ["run", "update-version"],
             "group": "build",
             "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": true,
-                "panel": "shared"
             },
             "detail": "Update project version in manifests"
         },
@@ -223,12 +136,6 @@
             "command": "npm",
             "args": ["run", "generate-uuids"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Generate new UUIDs for project manifests"
         },
         {
@@ -237,12 +144,6 @@
             "command": "npm",
             "args": ["run", "update-workspace"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Update workspace configurations from template"
         },
         {
@@ -251,12 +152,6 @@
             "command": "npm",
             "args": ["run", "list-projects"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "List all available projects in the current workspace"
         },
         {
@@ -265,12 +160,6 @@
             "command": "npm",
             "args": ["run", "open-mc-folder"],
             "group": "build",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared"
-            },
             "detail": "Open Minecraft development folders"
         }
     ]

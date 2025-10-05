@@ -8,10 +8,7 @@
             "args": ["run", "new-project"],
             "group": "build",
             "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": true,
-                "panel": "shared"
             },
             "detail": "Create new project from template"
         },
@@ -22,10 +19,7 @@
             "args": ["run", "clone-project"],
             "group": "build",
             "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": true,
-                "panel": "shared"
             },
             "detail": "Clone existing project with new UUIDs and name"
         },
@@ -36,10 +30,7 @@
             "args": ["run", "delete-project"],
             "group": "build",
             "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": true,
-                "panel": "shared"
             },
             "detail": "Delete project from workspace (with confirmation)",
             "icon": {
@@ -54,10 +45,7 @@
             "args": ["run", "rename-project"],
             "group": "build",
             "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": true,
-                "panel": "shared"
             },
             "detail": "Rename project directory and update manifests"
         },
@@ -68,10 +56,7 @@
             "args": ["run", "open-project"],
             "group": "build",
             "presentation": {
-                "echo": true,
-                "reveal": "always",
                 "focus": true,
-                "panel": "shared"
             },
             "detail": "Open project directory in VSCode"
         }
