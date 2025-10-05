@@ -44,18 +44,18 @@ if (process.env.INIT_CWD && process.env.INIT_CWD.includes('projects')) {
 
 const paths = {
   root: path.resolve(__dirname),
-  dist: path.resolve(__dirname, "dist"),
   project: path.resolve(__dirname, "projects", actualProjectName),
+  projectDist: path.resolve(__dirname, "projects", actualProjectName, "dist"),
 };
 
 export const config = {
   projectName: actualProjectName,
   project: paths.project,
   entry: path.join(paths.project, "tscripts/main.ts"),
-  outFile: path.join(paths.dist, "scripts/main.js"),
+  outFile: path.join(paths.projectDist, "scripts/main.js"),
   behaviorPack: path.join(paths.project, "behavior_pack"),
   resourcePack: path.join(paths.project, "resource_pack"),
-  packageFile: path.join(paths.dist, "packages", `${actualProjectName}.mcaddon`),
+  packageFile: path.join(paths.projectDist, `${actualProjectName}.mcaddon`),
 };
 
 //§e = = = = = = = = task configs = = = = = = = = 
@@ -79,7 +79,8 @@ const typescriptOptions: TscTaskOptions = {
 };
 
 const mcaddonTaskOptions = {
-  ...copyTaskOptions,
+  copyToBehaviorPacks: [config.behaviorPack],
+  copyToResourcePacks: [config.resourcePack],
   outputFile: config.packageFile,
 };
 
@@ -141,7 +142,7 @@ task(TASKS.PACKAGE, series(TASKS.CLEAN_COLLATERAL, TASKS.COPY));
 task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE) as any));
 
 task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions));
-task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.BUILD, TASKS.CREATE_MCADDON));
+task(TASKS.MCADDON, mcaddonTask(mcaddonTaskOptions));
 
 task(TASKS.NEW_PROJECT, newProjectTask(paths.root));
 

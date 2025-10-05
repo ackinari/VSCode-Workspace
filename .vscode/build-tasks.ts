@@ -77,7 +77,9 @@ interface CopyTaskParams {
     copyToResourcePacks?: string[]
 }
 
-interface McAddonTaskParams extends CopyTaskParams {}
+interface McAddonTaskParams extends CopyTaskParams {
+    outputFile?: string
+}
 
 enum MinecraftProduct {
     BedrockGDK = 'BedrockGDK',
@@ -234,6 +236,80 @@ function updateProjectName(projectPath: string, newName: string): void {
         const langContent = fs.readFileSync(behaviorLangFilePath, 'utf8')
         const updatedLangContent = langContent.replace(/pack\.name=.*/g, `pack.name=${newName}`)
         fs.writeFileSync(behaviorLangFilePath, updatedLangContent)
+    }
+}
+
+/**
+ * Updates project description in manifests (both resource and behavior packs)
+ */
+function updateProjectDescription(projectPath: string, newDescription: string): void {
+    // Update behavior pack manifest
+    const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+    if (fs.existsSync(behaviorManifestPath)) {
+        try {
+            const manifest: ProjectManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+            if (manifest.header) {
+                manifest.header.description = newDescription
+                fs.writeFileSync(behaviorManifestPath, JSON.stringify(manifest, null, 4))
+            }
+        } catch (error) {
+            console.log(chalk.yellow('⚠ Failed to update behavior pack description'))
+        }
+    }
+
+    // Update resource pack manifest
+    const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+    if (fs.existsSync(resourceManifestPath)) {
+        try {
+            const manifest: ProjectManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
+            if (manifest.header) {
+                manifest.header.description = newDescription
+                fs.writeFileSync(resourceManifestPath, JSON.stringify(manifest, null, 4))
+            }
+        } catch (error) {
+            console.log(chalk.yellow('⚠ Failed to update resource pack description'))
+        }
+    }
+}
+
+/**
+ * Deletes deployed project files from Minecraft development folders
+ */
+function deleteDeployedProject(projectName: string): void {
+    const paths = getGameDeploymentRootPaths()
+    let deletedCount = 0
+    
+    Object.entries(paths).forEach(([product, deployPath]) => {
+        if (!deployPath || !fs.existsSync(deployPath)) return
+        
+        const behaviorDeployPath = path.join(deployPath, BehaviorPacksPath, `${projectName}_BP`)
+        const resourceDeployPath = path.join(deployPath, ResourcePacksPath, `${projectName}_RP`)
+        
+        if (fs.existsSync(behaviorDeployPath)) {
+            try {
+                rimraf.sync(behaviorDeployPath)
+                console.log(chalk.green(`✓ Deleted behavior pack from ${product}`))
+                deletedCount++
+            } catch (error) {
+                console.log(chalk.red(`✗ Failed to delete behavior pack from ${product}`))
+            }
+        }
+        
+        if (fs.existsSync(resourceDeployPath)) {
+            try {
+                rimraf.sync(resourceDeployPath)
+                console.log(chalk.green(`✓ Deleted resource pack from ${product}`))
+                deletedCount++
+            } catch (error) {
+                console.log(chalk.red(`✗ Failed to delete resource pack from ${product}`))
+            }
+        }
+    })
+    
+    if (deletedCount === 0) {
+        console.log(chalk.gray('No deployed files found to delete'))
+    } else {
+        console.log(chalk.blue(`Deleted ${deletedCount} deployed pack(s)`))
     }
 }
 /**
@@ -608,13 +684,23 @@ export function mcaddonTask(params: McAddonTaskParams): TaskFunction {
         const projectDir = path.dirname(behaviorPackPath)
         const projectName = path.basename(projectDir)
         
-        // Create dist folder inside the project directory, not in workspace root
-        const distDir = path.join(projectDir, 'dist')
-        if (!fs.existsSync(distDir)) {
-            fs.mkdirSync(distDir, { recursive: true })
+        // Use outputFile parameter if provided, otherwise create in project's dist folder
+        let mcaddonFile: string
+        if (params.outputFile) {
+            mcaddonFile = params.outputFile
+            // Ensure the directory exists
+            const mcaddonDir = path.dirname(mcaddonFile)
+            if (!fs.existsSync(mcaddonDir)) {
+                fs.mkdirSync(mcaddonDir, { recursive: true })
+            }
+        } else {
+            // Fallback: create in project's dist folder
+            const distDir = path.join(projectDir, 'dist')
+            if (!fs.existsSync(distDir)) {
+                fs.mkdirSync(distDir, { recursive: true })
+            }
+            mcaddonFile = path.join(distDir, `${projectName}.mcaddon`)
         }
-        
-        const mcaddonFile = path.join(distDir, `${projectName}.mcaddon`)
         
         console.log(`Creating .mcaddon package: ${mcaddonFile}`)
         
@@ -643,7 +729,6 @@ export function mcaddonTask(params: McAddonTaskParams): TaskFunction {
             return zip.archive(mcaddonFile).then(
                 () => {
                     console.log(`[SUCCESS] McAddon package created: ${mcaddonFile}`)
-                    console.log(`Location: ${distDir}`)
                     return Promise.resolve()
                 },
                 (error: any) => {
@@ -794,6 +879,13 @@ export function newProjectTask(rootPath: string): TaskFunction {
                         return true
                     },
                     filter: (input: string) => input.replace(/['"]/g, '').trim()
+                },
+                {
+                    type: 'input',
+                    name: 'projectDescription',
+                    message: 'Enter project description (optional):',
+                    default: 'A Minecraft Bedrock add-on',
+                    filter: (input: string) => input.replace(/['"]/g, '').trim()
                 }
             ])
 
@@ -825,6 +917,7 @@ export function newProjectTask(rootPath: string): TaskFunction {
             updateManifestUUIDs(resourceManifestPath, uuids.resourceHeaderUuid, uuids.resourceModuleUuid, uuids.behaviorHeaderUuid)
 
             updateProjectName(projectPath, projectName)
+            updateProjectDescription(projectPath, answers.projectDescription)
 
             console.log(chalk.green(`✓ Project "${projectName}" created successfully!`))
             console.log(chalk.gray(`Location: ${projectPath}`))
@@ -986,11 +1079,26 @@ export function deleteProjectTask(rootPath: string): TaskFunction {
                 return
             }
 
+            // Ask about deleting deployed files
+            const { deleteDeployment } = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'deleteDeployment',
+                    message: 'Also delete deployed files from Minecraft development folders?',
+                    default: true
+                }
+            ])
+
             console.log(chalk.yellow(`\nDeleting project "${projectToDelete}"...`))
 
             try {
                 rimraf.sync(projectPath)
                 console.log(chalk.green(`✓ Project "${projectToDelete}" deleted successfully`))
+
+                if (deleteDeployment) {
+                    console.log(chalk.yellow('\nDeleting deployed files...'))
+                    deleteDeployedProject(projectToDelete)
+                }
             } catch (error: any) {
                 console.log(chalk.red(`✗ Failed to delete project: ${error.message}`))
             }
@@ -1040,6 +1148,13 @@ export function renameProjectTask(rootPath: string): TaskFunction {
                         return true
                     },
                     filter: (input: string) => input.replace(/['"]/g, '').trim()
+                },
+                {
+                    type: 'input',
+                    name: 'newProjectDescription',
+                    message: 'Enter new project description (optional):',
+                    default: 'A Minecraft Bedrock add-on',
+                    filter: (input: string) => input.replace(/['"]/g, '').trim()
                 }
             ])
 
@@ -1058,6 +1173,7 @@ export function renameProjectTask(rootPath: string): TaskFunction {
             })
 
             updateProjectName(newProjectPath, cleanProjectName)
+            updateProjectDescription(newProjectPath, answers.newProjectDescription)
 
             // Update manifest names if they reference the old project name
             const behaviorManifestPath = path.join(newProjectPath, 'behavior_pack', 'manifest.json')
