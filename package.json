@@ -1,8 +1,9 @@
 {
-    "name": "@akinari/bedrock-workspace",
+    "name": "bedrock-workspace",
     "version": "1.0.0",
-    "description": "TypeScript Workspace",
+    "description": "JavaScript and TypeScript workspace for Minecraft Bedrock development",
     "author": "aKiNaRi",
+    "license": "MIT",
     "private": true,
     "devDependencies": {
         "@rushstack/node-core-library": "^3.66.1",
