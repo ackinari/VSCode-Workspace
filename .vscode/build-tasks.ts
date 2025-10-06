@@ -2330,144 +2330,135 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
                 
                 return {
                     name: `${file.file} ${statusColor(`[${statusText}]`)}`,
-                    value: file.file
+                    value: file.file,
+                    checked: false // Default to unchecked
                 }
             })
 
-            // Add "Update Selected Files" option at the bottom
-            fileChoices.push({
-                name: chalk.cyan.bold('── Update Selected Files ──'),
-                value: 'UPDATE_FILES'
-            })
-
-            const { selectedFile } = await inquirer.prompt([
+            const { selectedFiles } = await inquirer.prompt([
                 {
-                    type: 'list',
-                    name: 'selectedFile',
-                    message: 'Select files to update or continue:',
+                    type: 'checkbox',
+                    name: 'selectedFiles',
+                    message: 'Select files to update (use space to select, "a" to toggle all):',
                     choices: fileChoices
                 }
             ])
 
-            if (selectedFile === 'UPDATE_FILES') {
-                // User wants to update all files
-                const filesToUpdate = differentFiles.map(f => f.file)
+            if (selectedFiles.length === 0) {
+                console.log(chalk.gray('No files selected for update'))
+                return
+            }
 
-                if (filesToUpdate.length === 0) {
-                    console.log(chalk.gray('No files selected for update'))
-                    return
+            // Ask for confirmation to proceed
+            const { proceedWithUpdate } = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'proceedWithUpdate',
+                    message: `Update ${selectedFiles.length} selected file(s)?`,
+                    default: true
                 }
+            ])
 
-                // Show what will be updated vs kept
-                const filesToKeep = differentFiles
-                    .map(f => f.file)
-                    .filter(file => !filesToUpdate.includes(file))
+            if (!proceedWithUpdate) {
+                console.log(chalk.gray('Update cancelled'))
+                return
+            }
 
-                if (filesToUpdate.length > 0) {
-                    console.log(chalk.green(`\nFiles to be updated (${filesToUpdate.length}):`))
-                    filesToUpdate.forEach(file => {
-                        console.log(chalk.green(`  ✓ ${file}`))
-                    })
-                }
+            // Show what will be updated vs kept
+            const filesToUpdate = selectedFiles
+            const filesToKeep = differentFiles
+                .map(f => f.file)
+                .filter(file => !filesToUpdate.includes(file))
 
-                if (filesToKeep.length > 0) {
-                    console.log(chalk.red(`\nFiles to keep current version (${filesToKeep.length}):`))
-                    filesToKeep.forEach(file => {
-                        console.log(chalk.red(`  ✗ ${file}`))
-                    })
-                }
+            if (filesToUpdate.length > 0) {
+                console.log(chalk.green(`\nFiles to be updated (${filesToUpdate.length}):`))
+                filesToUpdate.forEach(file => {
+                    console.log(chalk.green(`  ✓ ${file}`))
+                })
+            }
 
-                // Confirm update
-                const { confirmUpdate } = await inquirer.prompt([
-                    {
-                        type: 'confirm',
-                        name: 'confirmUpdate',
-                        message: `Update ${filesToUpdate.length} file(s)?`,
-                        default: true
-                    }
-                ])
+            if (filesToKeep.length > 0) {
+                console.log(chalk.red(`\nFiles to keep current version (${filesToKeep.length}):`))
+                filesToKeep.forEach(file => {
+                    console.log(chalk.red(`  ✗ ${file}`))
+                })
+            }
 
-                if (!confirmUpdate) {
-                    console.log(chalk.gray('Update cancelled'))
-                    return
-                }
+            // Download files again for update
+            console.log(chalk.blue('\nDownloading latest files for update...'))
+            if (fs.existsSync(tempDir)) {
+                rimraf.sync(tempDir)
+            }
 
-                // Download files again for update
-                console.log(chalk.blue('\nDownloading latest files for update...'))
-                if (fs.existsSync(tempDir)) {
-                    rimraf.sync(tempDir)
-                }
+            try {
+                const degit = require('degit')
+                const repoName = repoUrl.replace('https://github.com/', '')
+                const emitter = degit(repoName)
+                await emitter.clone(tempDir)
+            } catch (error: any) {
+                console.log(chalk.red('✗ Failed to download files for update'))
+                return
+            }
 
+            // Update selected files
+            let updatedCount = 0
+            const errors: string[] = []
+
+            for (const file of filesToUpdate) {
                 try {
-                    const degit = require('degit')
-                    const repoName = repoUrl.replace('https://github.com/', '')
-                    const emitter = degit(repoName)
-                    await emitter.clone(tempDir)
-                } catch (error: any) {
-                    console.log(chalk.red('✗ Failed to download files for update'))
-                    return
-                }
+                    const remotePath = path.join(tempDir, file)
+                    const currentPath = path.join(rootPath, file)
 
-                // Update selected files
-                let updatedCount = 0
-                const errors: string[] = []
+                    if (fs.existsSync(remotePath)) {
+                        // Ensure directory exists
+                        const dir = path.dirname(currentPath)
+                        if (!fs.existsSync(dir)) {
+                            fs.mkdirSync(dir, { recursive: true })
+                        }
 
-                for (const file of filesToUpdate) {
-                    try {
-                        const remotePath = path.join(tempDir, file)
-                        const currentPath = path.join(rootPath, file)
-
-                        if (fs.existsSync(remotePath)) {
-                            // Ensure directory exists
-                            const dir = path.dirname(currentPath)
-                            if (!fs.existsSync(dir)) {
-                                fs.mkdirSync(dir, { recursive: true })
+                        // Copy file
+                        fs.copyFileSync(remotePath, currentPath)
+                        console.log(chalk.green(`  ✓ Updated: ${file}`))
+                        updatedCount++
+                    } else {
+                        // File was removed in remote, ask if should delete local
+                        const { deleteFile } = await inquirer.prompt([
+                            {
+                                type: 'confirm',
+                                name: 'deleteFile',
+                                message: `File "${file}" was removed from repository. Delete local file?`,
+                                default: false
                             }
+                        ])
 
-                            // Copy file
-                            fs.copyFileSync(remotePath, currentPath)
-                            console.log(chalk.green(`  ✓ Updated: ${file}`))
+                        if (deleteFile && fs.existsSync(currentPath)) {
+                            fs.unlinkSync(currentPath)
+                            console.log(chalk.yellow(`  ✓ Deleted: ${file}`))
                             updatedCount++
                         } else {
-                            // File was removed in remote, ask if should delete local
-                            const { deleteFile } = await inquirer.prompt([
-                                {
-                                    type: 'confirm',
-                                    name: 'deleteFile',
-                                    message: `File "${file}" was removed from repository. Delete local file?`,
-                                    default: false
-                                }
-                            ])
-
-                            if (deleteFile && fs.existsSync(currentPath)) {
-                                fs.unlinkSync(currentPath)
-                                console.log(chalk.yellow(`  ✓ Deleted: ${file}`))
-                                updatedCount++
-                            } else {
-                                console.log(chalk.gray(`  - Kept: ${file}`))
-                            }
+                            console.log(chalk.gray(`  - Kept: ${file}`))
                         }
-                    } catch (error: any) {
-                        const errorMsg = `Failed to update ${file}: ${error.message}`
-                        console.log(chalk.red(`  ✗ ${errorMsg}`))
-                        errors.push(errorMsg)
                     }
+                } catch (error: any) {
+                    const errorMsg = `Failed to update ${file}: ${error.message}`
+                    console.log(chalk.red(`  ✗ ${errorMsg}`))
+                    errors.push(errorMsg)
                 }
+            }
 
-                // Clean up temp directory
-                rimraf.sync(tempDir)
+            // Clean up temp directory
+            rimraf.sync(tempDir)
 
-                console.log('')
-                console.log(chalk.green(`✓ Workspace update completed!`))
-                console.log(chalk.blue(`Updated files: ${updatedCount}`))
-                console.log(chalk.red(`Kept current: ${filesToKeep.length}`))
+            console.log('')
+            console.log(chalk.green(`✓ Workspace update completed!`))
+            console.log(chalk.blue(`Updated files: ${updatedCount}`))
+            console.log(chalk.red(`Kept current: ${filesToKeep.length}`))
 
-                if (errors.length > 0) {
-                    console.log(chalk.red(`Errors: ${errors.length}`))
-                    errors.forEach(error => {
-                        console.log(chalk.red(`  - ${error}`))
-                    })
-                }
+            if (errors.length > 0) {
+                console.log(chalk.red(`Errors: ${errors.length}`))
+                errors.forEach(error => {
+                    console.log(chalk.red(`  - ${error}`))
+                })
             }
 
 
