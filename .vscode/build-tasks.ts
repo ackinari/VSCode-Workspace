@@ -2201,3 +2201,289 @@ export function debugTask(projectPath: string): TaskFunction {
         console.log(chalk.gray('Copy this output and share it with developers for faster troubleshooting'))
     }
 }
+
+export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
+    return async () => {
+        console.clear()
+        console.log(chalk.cyan.bold('Import Development Projects'))
+        console.log(chalk.gray('─'.repeat(50)))
+
+        try {
+            const projectsDir = path.join(rootPath, 'projects')
+            if (!validateProjectsDirectory(projectsDir)) return
+
+            // Get current workspace projects
+            const currentProjects = getAvailableProjects(projectsDir)
+            console.log(chalk.blue(`Current workspace projects: ${currentProjects.length}`))
+
+            // Get development projects from Minecraft folders
+            const developmentProjects = getDevelopmentProjects()
+            if (developmentProjects.length === 0) {
+                console.log(chalk.yellow('No development projects found in Minecraft folders'))
+                console.log(chalk.gray('Deploy some projects first or check your Minecraft installation'))
+                return
+            }
+
+            // Filter behavior packs only and exclude already imported projects
+            const behaviorPacks = developmentProjects.filter(p => p.type === 'behavior')
+            const availableForImport = behaviorPacks.filter(devProject => {
+                // Extract project name from development project (remove _BP suffix and product info)
+                const projectName = devProject.name.replace(/ \(.+\)$/, '').replace(/_BP$/, '')
+                return !currentProjects.some(currentProject => 
+                    currentProject === projectName || 
+                    currentProject.replace(/\s+/g, '_') === projectName ||
+                    projectName.includes(currentProject) ||
+                    currentProject.includes(projectName)
+                )
+            })
+
+            if (availableForImport.length === 0) {
+                console.log(chalk.yellow('No new projects available for import'))
+                console.log(chalk.gray('All development projects are already in the workspace'))
+                return
+            }
+
+            // Create choices for inquirer - individual projects + "Import All" option
+            const projectChoices: Array<{name: string, value: any}> = availableForImport.map(project => ({
+                name: project.name,
+                value: project
+            }))
+
+            // Add "Import All" option at the top
+            projectChoices.unshift({
+                name: 'Import All Projects',
+                value: 'IMPORT_ALL'
+            })
+
+            const { selectedProject } = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'selectedProject',
+                    message: 'Select project to import (or import all):',
+                    choices: projectChoices
+                }
+            ])
+
+            let selectedProjects: any[]
+            if (selectedProject === 'IMPORT_ALL') {
+                selectedProjects = availableForImport
+                console.log(chalk.cyan(`\nImporting all ${availableForImport.length} projects...`))
+            } else {
+                selectedProjects = [selectedProject]
+                console.log(chalk.cyan(`\nImporting selected project...`))
+            }
+
+            console.log(chalk.yellow(`\nImporting ${selectedProjects.length} project(s)...`))
+
+            let importedCount = 0
+            const errors: string[] = []
+
+            for (const devProject of selectedProjects) {
+                try {
+                    // Extract clean project name - remove product info and BP/RP suffixes
+                    let projectName = devProject.name.replace(/ \(.+\)$/, '') // Remove (BedrockUWP) etc
+                    projectName = projectName.replace(/[_\s]*(BP|RP|bp|rp)$/i, '') // Remove BP/RP suffixes
+                    projectName = projectName.trim()
+                    
+                    const folderName = projectName.replace(/\s+/g, '_')
+                    const newProjectPath = path.join(projectsDir, folderName)
+
+                    console.log(chalk.blue(`\nImporting: ${projectName}`))
+
+                    // Create project directory
+                    if (!fs.existsSync(newProjectPath)) {
+                        fs.mkdirSync(newProjectPath, { recursive: true })
+                    }
+
+                    // Import behavior pack
+                    const behaviorPackPath = path.join(newProjectPath, 'behavior_pack')
+                    if (fs.existsSync(devProject.path)) {
+                        console.log(chalk.gray('  Copying behavior pack...'))
+                        rushstack.FileSystem.copyFiles({
+                            sourcePath: devProject.path,
+                            destinationPath: behaviorPackPath,
+                            preserveTimestamps: true,
+                        })
+                    }
+
+                    // Find and import corresponding resource pack - improved detection for projects with spaces
+                    const originalProjectName = devProject.name.replace(/ \(.+\)$/, '') // Keep original name with spaces
+                    const resourcePackVariations = [
+                        originalProjectName.replace(/[_\s]*(BP|bp)$/i, '_RP'), // Replace BP with RP
+                        originalProjectName.replace(/[_\s]*(BP|bp)$/i, ' RP'), // Replace BP with RP (with space)
+                        originalProjectName.replace(/[_\s]*(BP|bp)$/i, 'RP'),  // Replace BP with RP (no separator)
+                        projectName + '_RP', // Clean name + _RP
+                        projectName + ' RP', // Clean name + space RP
+                        projectName + 'RP'   // Clean name + RP
+                    ]
+
+                    const resourceProject = developmentProjects.find(p => {
+                        if (p.type !== 'resource') return false
+                        
+                        // Check if any variation matches
+                        return resourcePackVariations.some(variation => 
+                            p.name.includes(variation) || 
+                            p.name.replace(/ \(.+\)$/, '').includes(variation.replace(/ \(.+\)$/, ''))
+                        )
+                    })
+
+                    if (resourceProject && fs.existsSync(resourceProject.path)) {
+                        console.log(chalk.gray('  Copying resource pack...'))
+                        const resourcePackPath = path.join(newProjectPath, 'resource_pack')
+                        rushstack.FileSystem.copyFiles({
+                            sourcePath: resourceProject.path,
+                            destinationPath: resourcePackPath,
+                            preserveTimestamps: true,
+                        })
+                    } else {
+                        // Ask user if they want to create a resource pack
+                        const { createResourcePack } = await inquirer.prompt([
+                            {
+                                type: 'confirm',
+                                name: 'createResourcePack',
+                                message: `  Resource pack not found for "${projectName}". Create empty resource pack?`,
+                                default: false
+                            }
+                        ])
+
+                        if (createResourcePack) {
+                            console.log(chalk.gray('  Creating empty resource pack...'))
+                            const resourcePackPath = path.join(newProjectPath, 'resource_pack')
+                            const templateResourcePath = path.join(rootPath, 'projects', 'template', 'resource_pack')
+                            if (fs.existsSync(templateResourcePath)) {
+                                rushstack.FileSystem.copyFiles({
+                                    sourcePath: templateResourcePath,
+                                    destinationPath: resourcePackPath,
+                                    preserveTimestamps: true,
+                                })
+                            }
+                        } else {
+                            console.log(chalk.gray('  Skipped creating resource pack'))
+                        }
+                    }
+
+                    // Convert scripts folder to tscripts
+                    const scriptsPath = path.join(behaviorPackPath, 'scripts')
+                    const tscriptsPath = path.join(newProjectPath, 'tscripts')
+
+                    if (fs.existsSync(scriptsPath)) {
+                        console.log(chalk.gray('  Converting scripts to tscripts...'))
+                        
+                        // Create tscripts directory
+                        if (!fs.existsSync(tscriptsPath)) {
+                            fs.mkdirSync(tscriptsPath, { recursive: true })
+                        }
+
+                        // Copy .js files as .ts files (basic conversion)
+                        const convertScriptsToTypeScript = (srcDir: string, destDir: string) => {
+                            const items = fs.readdirSync(srcDir)
+                            items.forEach(item => {
+                                const srcPath = path.join(srcDir, item)
+                                const stat = fs.statSync(srcPath)
+
+                                if (stat.isDirectory()) {
+                                    const destSubDir = path.join(destDir, item)
+                                    if (!fs.existsSync(destSubDir)) {
+                                        fs.mkdirSync(destSubDir, { recursive: true })
+                                    }
+                                    convertScriptsToTypeScript(srcPath, destSubDir)
+                                } else if (item.endsWith('.js')) {
+                                    // Convert .js to .ts
+                                    const tsFileName = item.replace('.js', '.ts')
+                                    const destPath = path.join(destDir, tsFileName)
+                                    
+                                    // Read JS content and add basic TypeScript imports if needed
+                                    let content = fs.readFileSync(srcPath, 'utf8')
+                                    
+                                    // Add basic Minecraft imports if they seem to be used
+                                    if (content.includes('@minecraft/server') && !content.includes('import')) {
+                                        content = `import { world, system } from '@minecraft/server';\n\n${content}`
+                                    }
+                                    
+                                    fs.writeFileSync(destPath, content)
+                                } else {
+                                    // Copy other files as-is
+                                    const destPath = path.join(destDir, item)
+                                    fs.copyFileSync(srcPath, destPath)
+                                }
+                            })
+                        }
+
+                        convertScriptsToTypeScript(scriptsPath, tscriptsPath)
+
+                        // Remove the original scripts folder from behavior pack
+                        rimraf.sync(scriptsPath)
+                        console.log(chalk.gray('  Removed original scripts folder'))
+                    } else {
+                        // Create basic main.ts if no scripts found
+                        console.log(chalk.gray('  Creating basic main.ts...'))
+                        if (!fs.existsSync(tscriptsPath)) {
+                            fs.mkdirSync(tscriptsPath, { recursive: true })
+                        }
+                        const mainTsContent = `import { world, system } from '@minecraft/server';
+
+// ${projectName} - Imported from development folder
+// Add your TypeScript code here
+
+world.beforeEvents.chatSend.subscribe((eventData) => {
+    // Example: Handle chat messages
+    console.log(\`\${eventData.sender.name}: \${eventData.message}\`);
+});
+
+console.log('${projectName} loaded successfully!');
+`
+                        fs.writeFileSync(path.join(tscriptsPath, 'main.ts'), mainTsContent)
+                    }
+
+                    // Copy template configuration files
+                    const templatePath = path.join(rootPath, 'projects', 'template')
+                    const configFiles = ['tsconfig.json', '.vscode']
+                    
+                    configFiles.forEach(configFile => {
+                        const srcPath = path.join(templatePath, configFile)
+                        const destPath = path.join(newProjectPath, configFile)
+                        
+                        if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
+                            if (fs.statSync(srcPath).isDirectory()) {
+                                rushstack.FileSystem.copyFiles({
+                                    sourcePath: srcPath,
+                                    destinationPath: destPath,
+                                    preserveTimestamps: true,
+                                })
+                            } else {
+                                fs.copyFileSync(srcPath, destPath)
+                            }
+                        }
+                    })
+
+                    // Update project name in manifests and language files (keeping original UUIDs)
+                    // console.log(chalk.gray('  Keeping original UUIDs...'))
+                    updateProjectName(newProjectPath, projectName)
+
+                    console.log(chalk.green(`  ✓ Successfully imported: ${projectName}`))
+                    importedCount++
+
+                } catch (error: any) {
+                    const errorMsg = `Failed to import ${devProject.name}: ${error.message}`
+                    console.log(chalk.red(`  ✗ ${errorMsg}`))
+                    errors.push(errorMsg)
+                }
+            }
+
+            console.log('')
+            console.log(chalk.green(`✓ Import completed!`))
+            console.log(chalk.blue(`Successfully imported: ${importedCount} project(s)`))
+            
+            if (errors.length > 0) {
+                console.log(chalk.red(`Failed imports: ${errors.length}`))
+                errors.forEach(error => {
+                    console.log(chalk.red(`  - ${error}`))
+                })
+            }
+
+
+        } catch (error: any) {
+            console.log(chalk.red('✗ Failed to import development projects:'), error.message)
+        }
+    }
+}

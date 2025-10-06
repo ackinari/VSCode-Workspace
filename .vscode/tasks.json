@@ -81,6 +81,19 @@
                 "clear": true,
             },
             "detail": "List all projects deployed to Minecraft folders"
+        },
+        {
+            "label": "Import Development Projects",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "import-development-projects"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+                "focus": true
+            },
+            "detail": "Import projects from Minecraft folders"
         }
     ]
 }

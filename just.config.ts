@@ -25,6 +25,7 @@ import {
   listDevelopmentProjectsTask,
   openWorkspaceTask,
   debugTask,
+  importDevelopmentProjectsTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -120,6 +121,7 @@ const TASKS = {
   OPEN_PROJECT: "open-project",
   LIST_DEVELOPMENT_PROJECTS: "list-development-projects",
   OPEN_WORKSPACE: "open-workspace",
+  IMPORT_DEVELOPMENT_PROJECTS: "import-development-projects",
 } as const;
 
 //§e = = = = = = = = tasks = = = = = = = = 
@@ -162,3 +164,4 @@ task(TASKS.RENAME_PROJECT, renameProjectTask(paths.root));
 task(TASKS.OPEN_PROJECT, openProjectTask(paths.root));
 task(TASKS.LIST_DEVELOPMENT_PROJECTS, listDevelopmentProjectsTask());
 task(TASKS.OPEN_WORKSPACE, openWorkspaceTask(paths.root));
+task(TASKS.IMPORT_DEVELOPMENT_PROJECTS, importDevelopmentProjectsTask(paths.root));
