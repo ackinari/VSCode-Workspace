@@ -104,6 +104,7 @@
             "presentation": {
                 "showReuseMessage": false,
                 "clear": true,
+                "focus": true
             },
             "detail": "Update bedrock-workspace from the newest github version"
         }
