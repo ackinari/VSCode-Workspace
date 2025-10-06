@@ -2211,7 +2211,7 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
         try {
             console.log(chalk.blue('Checking for workspace updates...'))
             
-            // Get the repository URL from git config
+            // Get the repository URL from git config or use default
             let repoUrl: string
             try {
                 const remoteUrl = child_process.execSync('git config --get remote.origin.url', { 
@@ -2226,9 +2226,9 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
                     repoUrl = remoteUrl.replace('.git', '')
                 }
             } catch (error) {
-                console.log(chalk.red('✗ Could not get repository URL'))
-                console.log(chalk.gray('Make sure you are in a git repository'))
-                return
+                // Fallback to default repository URL when git is not available
+                console.log(chalk.yellow('⚠ Git repository not found, using default repository'))
+                repoUrl = 'https://github.com/ackinari/VSCode-Workspace'
             }
 
             console.log(chalk.gray(`Repository: ${repoUrl}`))
@@ -2407,7 +2407,7 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
 
             if (filesToUpdate.length > 0) {
                 console.log(chalk.green(`\nFiles to be updated (${filesToUpdate.length}):`))
-                filesToUpdate.forEach(file => {
+                filesToUpdate.forEach((file:any) => {
                     console.log(chalk.green(`  ✓ ${file}`))
                 })
             }
