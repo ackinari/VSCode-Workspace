@@ -19,7 +19,10 @@
         "**/package-lock.json": true,
         "**/tsconfig.temp.json": true,
         // "**/package.json": true,
+        "**/just.config.ts": true,
+        "**/eslint.config.mjs": true,
         // "**/tsconfig.json": true,
+        // "**/.prettierrc.json": true,
 
         "**/.git": true,
         "**/.DS_Store": true
