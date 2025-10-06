@@ -2362,68 +2362,33 @@ export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
                         }
                     }
 
-                    // Convert scripts folder to tscripts
+                    // Move scripts folder to tscripts (keeping original format)
                     const scriptsPath = path.join(behaviorPackPath, 'scripts')
                     const tscriptsPath = path.join(newProjectPath, 'tscripts')
 
                     if (fs.existsSync(scriptsPath)) {
-                        console.log(chalk.gray('  Converting scripts to tscripts...'))
+                        console.log(chalk.gray('  Moving scripts to tscripts (keeping original format)...'))
                         
-                        // Create tscripts directory
-                        if (!fs.existsSync(tscriptsPath)) {
-                            fs.mkdirSync(tscriptsPath, { recursive: true })
-                        }
-
-                        // Copy .js files as .ts files (basic conversion)
-                        const convertScriptsToTypeScript = (srcDir: string, destDir: string) => {
-                            const items = fs.readdirSync(srcDir)
-                            items.forEach(item => {
-                                const srcPath = path.join(srcDir, item)
-                                const stat = fs.statSync(srcPath)
-
-                                if (stat.isDirectory()) {
-                                    const destSubDir = path.join(destDir, item)
-                                    if (!fs.existsSync(destSubDir)) {
-                                        fs.mkdirSync(destSubDir, { recursive: true })
-                                    }
-                                    convertScriptsToTypeScript(srcPath, destSubDir)
-                                } else if (item.endsWith('.js')) {
-                                    // Convert .js to .ts
-                                    const tsFileName = item.replace('.js', '.ts')
-                                    const destPath = path.join(destDir, tsFileName)
-                                    
-                                    // Read JS content and add basic TypeScript imports if needed
-                                    let content = fs.readFileSync(srcPath, 'utf8')
-                                    
-                                    // Add basic Minecraft imports if they seem to be used
-                                    if (content.includes('@minecraft/server') && !content.includes('import')) {
-                                        content = `import { world, system } from '@minecraft/server';\n\n${content}`
-                                    }
-                                    
-                                    fs.writeFileSync(destPath, content)
-                                } else {
-                                    // Copy other files as-is
-                                    const destPath = path.join(destDir, item)
-                                    fs.copyFileSync(srcPath, destPath)
-                                }
-                            })
-                        }
-
-                        convertScriptsToTypeScript(scriptsPath, tscriptsPath)
+                        // Copy scripts folder to tscripts maintaining original format
+                        rushstack.FileSystem.copyFiles({
+                            sourcePath: scriptsPath,
+                            destinationPath: tscriptsPath,
+                            preserveTimestamps: true,
+                        })
 
                         // Remove the original scripts folder from behavior pack
                         rimraf.sync(scriptsPath)
                         console.log(chalk.gray('  Removed original scripts folder'))
                     } else {
-                        // Create basic main.ts if no scripts found
-                        console.log(chalk.gray('  Creating basic main.ts...'))
+                        // Create basic main.js if no scripts found
+                        console.log(chalk.gray('  Creating basic main.js...'))
                         if (!fs.existsSync(tscriptsPath)) {
                             fs.mkdirSync(tscriptsPath, { recursive: true })
                         }
-                        const mainTsContent = `import { world, system } from '@minecraft/server';
+                        const mainJsContent = `// ${projectName} - Imported from development folder
+// Add your JavaScript code here
 
-// ${projectName} - Imported from development folder
-// Add your TypeScript code here
+import { world, system } from '@minecraft/server';
 
 world.beforeEvents.chatSend.subscribe((eventData) => {
     // Example: Handle chat messages
@@ -2432,7 +2397,7 @@ world.beforeEvents.chatSend.subscribe((eventData) => {
 
 console.log('${projectName} loaded successfully!');
 `
-                        fs.writeFileSync(path.join(tscriptsPath, 'main.ts'), mainTsContent)
+                        fs.writeFileSync(path.join(tscriptsPath, 'main.js'), mainJsContent)
                     }
 
                     // Copy template configuration files
