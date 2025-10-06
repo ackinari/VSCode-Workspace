@@ -2268,9 +2268,9 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
                 'projects/template/.vscode/settings.json'
             ]
 
-            const differentFiles: Array<{
+            const allFiles: Array<{
                 file: string
-                status: 'modified' | 'new' | 'missing'
+                status: 'modified' | 'new' | 'missing' | 'up-to-date'
                 currentExists: boolean
                 remoteExists: boolean
             }> = []
@@ -2283,55 +2283,90 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
                 const remoteExists = fs.existsSync(remotePath)
 
                 if (!currentExists && remoteExists) {
-                    differentFiles.push({
+                    allFiles.push({
                         file,
                         status: 'new',
                         currentExists: false,
                         remoteExists: true
                     })
                 } else if (currentExists && !remoteExists) {
-                    differentFiles.push({
+                    allFiles.push({
                         file,
                         status: 'missing',
                         currentExists: true,
                         remoteExists: false
                     })
                 } else if (currentExists && remoteExists) {
-                    // Compare file contents
-                    const currentContent = fs.readFileSync(currentPath, 'utf8')
-                    const remoteContent = fs.readFileSync(remotePath, 'utf8')
+                    // Compare file contents with normalization
+                    let currentContent = fs.readFileSync(currentPath, 'utf8')
+                    let remoteContent = fs.readFileSync(remotePath, 'utf8')
                     
-                    if (currentContent !== remoteContent) {
-                        differentFiles.push({
+                    // Normalize line endings and whitespace for comparison
+                    const normalizeContent = (content: string): string => {
+                        return content
+                            .replace(/\r\n/g, '\n')  // Convert CRLF to LF
+                            .replace(/\r/g, '\n')    // Convert CR to LF
+                            .replace(/\s+$/gm, '')   // Remove trailing whitespace from each line
+                            .replace(/\n+$/, '\n')   // Normalize ending newlines
+                    }
+                    
+                    const normalizedCurrent = normalizeContent(currentContent)
+                    const normalizedRemote = normalizeContent(remoteContent)
+                    
+                    if (normalizedCurrent !== normalizedRemote) {
+                        allFiles.push({
                             file,
                             status: 'modified',
                             currentExists: true,
                             remoteExists: true
                         })
+                    } else {
+                        allFiles.push({
+                            file,
+                            status: 'up-to-date',
+                            currentExists: true,
+                            remoteExists: true
+                        })
                     }
+                } else {
+                    // Both files don't exist - still show in list
+                    allFiles.push({
+                        file,
+                        status: 'missing',
+                        currentExists: false,
+                        remoteExists: false
+                    })
                 }
             }
 
             // Clean up temp directory
             rimraf.sync(tempDir)
 
+            // Count different files for summary
+            const differentFiles = allFiles.filter(f => f.status !== 'up-to-date')
+            
             if (differentFiles.length === 0) {
                 console.log(chalk.green('✓ Workspace is up to date!'))
-                console.log(chalk.gray('No files need to be updated'))
-                return
+                console.log(chalk.gray('All files are current, but you can still force update if needed'))
+            } else {
+                console.log(chalk.yellow(`Found ${differentFiles.length} file(s) with differences`))
             }
 
-            // Create choices for file selection
-            const fileChoices = differentFiles.map(file => {
+            // Create choices for file selection - show ALL files
+            const fileChoices = allFiles.map(file => {
                 const statusColor = file.status === 'new' ? chalk.green : 
-                                  file.status === 'missing' ? chalk.red : chalk.yellow
+                                  file.status === 'missing' ? chalk.red : 
+                                  file.status === 'modified' ? chalk.yellow :
+                                  chalk.gray
                 const statusText = file.status === 'new' ? 'NEW' : 
-                                 file.status === 'missing' ? 'REMOVED' : 'MODIFIED'
+                                 file.status === 'missing' ? 'REMOVED' : 
+                                 file.status === 'modified' ? 'MODIFIED' :
+                                 'UP-TO-DATE'
                 
                 return {
                     name: `${file.file} ${statusColor(`[${statusText}]`)}`,
                     value: file.file,
-                    checked: false // Default to unchecked
+                    checked: file.status !== 'up-to-date' // Check only files that are different
                 }
             })
 
