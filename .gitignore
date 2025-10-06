@@ -10,9 +10,9 @@ package-lock.json
 
 # Others
 TODO.md
-dist/*
 
-# personal projects
+# personal
+libraries/*
 backups/*
 projects/*
 !projects/template/
