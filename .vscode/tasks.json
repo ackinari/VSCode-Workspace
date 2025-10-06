@@ -94,6 +94,18 @@
                 "focus": true
             },
             "detail": "Import projects from Minecraft folders"
+        },
+        {
+            "label": "Update Bedrock-Workspace",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "update-bedrock-workspace"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+            },
+            "detail": "Update bedrock-workspace from the newest github version"
         }
     ]
 }

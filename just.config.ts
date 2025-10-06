@@ -26,6 +26,7 @@ import {
   openWorkspaceTask,
   debugTask,
   importDevelopmentProjectsTask,
+  updateBedrockWorkspaceTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -109,6 +110,7 @@ const TASKS = {
   MCADDON: "mcaddon",
   NEW_PROJECT: "new-project",
   UPDATE_WORKSPACE: "update-workspace",
+  UPDATE_BEDROCK_WORKSPACE: "update-bedrock-workspace",
   ANALYZE: "analyze",
   BACKUP: "backup",
   UPDATE_VERSION: "update-version",
@@ -150,6 +152,7 @@ task(TASKS.NEW_PROJECT, newProjectTask(paths.root));
 
 // Project management tasks
 task(TASKS.UPDATE_WORKSPACE, updateWorkspaceTask(paths.project, paths.root));
+task(TASKS.UPDATE_BEDROCK_WORKSPACE, updateBedrockWorkspaceTask(paths.root));
 task(TASKS.ANALYZE, analyzeProjectTask(paths.project));
 task(TASKS.BACKUP, backupProjectTask(paths.project, paths.root));
 task(TASKS.UPDATE_VERSION, updateVersionTask(paths.project));

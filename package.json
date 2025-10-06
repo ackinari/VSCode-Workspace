@@ -42,6 +42,7 @@
         "mcaddon": "cross-env \"REAL_CWD=%CD%\" just-scripts mcaddon",
         "new-project": "just-scripts new-project",
         "update-workspace": "cross-env \"REAL_CWD=%CD%\" just-scripts update-workspace",
+        "update-bedrock-workspace": "just-scripts update-bedrock-workspace",
         "analyze": "cross-env \"REAL_CWD=%CD%\" just-scripts analyze",
         "backup": "cross-env \"REAL_CWD=%CD%\" just-scripts backup",
         "update-version": "cross-env \"REAL_CWD=%CD%\" just-scripts update-version",

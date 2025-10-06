@@ -2202,6 +2202,303 @@ export function debugTask(projectPath: string): TaskFunction {
     }
 }
 
+export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
+    return async () => {
+        console.clear()
+        console.log(chalk.cyan.bold('Update Bedrock Workspace'))
+        console.log(chalk.gray('─'.repeat(50)))
+
+        try {
+            console.log(chalk.blue('Checking for workspace updates...'))
+            
+            // Get the repository URL from git config
+            let repoUrl: string
+            try {
+                const remoteUrl = child_process.execSync('git config --get remote.origin.url', { 
+                    cwd: rootPath, 
+                    encoding: 'utf8' 
+                }).trim()
+                
+                // Convert SSH URL to HTTPS if needed
+                if (remoteUrl.startsWith('git@github.com:')) {
+                    repoUrl = remoteUrl.replace('git@github.com:', 'https://github.com/').replace('.git', '')
+                } else {
+                    repoUrl = remoteUrl.replace('.git', '')
+                }
+            } catch (error) {
+                console.log(chalk.red('✗ Could not get repository URL'))
+                console.log(chalk.gray('Make sure you are in a git repository'))
+                return
+            }
+
+            console.log(chalk.gray(`Repository: ${repoUrl}`))
+
+            // Create temporary directory for comparison
+            const tempDir = path.join(rootPath, '.temp-workspace-update')
+            if (fs.existsSync(tempDir)) {
+                rimraf.sync(tempDir)
+            }
+
+            console.log(chalk.blue('Downloading latest workspace files...'))
+            
+            try {
+                // Use degit to download the latest version
+                const degit = require('degit')
+                const repoName = repoUrl.replace('https://github.com/', '')
+                const emitter = degit(repoName)
+                await emitter.clone(tempDir)
+            } catch (error: any) {
+                console.log(chalk.red('✗ Failed to download workspace files'))
+                console.log(chalk.gray(`Error: ${error.message}`))
+                return
+            }
+
+            // Compare files and find differences
+            const filesToCompare = [
+                '.prettierrc.json',
+                'eslint.config.mjs',
+                'just.config.ts',
+                'package.json',
+                'tsconfig.json',
+                '.vscode/build-tasks.ts',
+                '.vscode/tasks.json',
+                '.vscode/settings.json',
+                'projects/template/tsconfig.json',
+                'projects/template/.vscode/tasks.json',
+                'projects/template/.vscode/settings.json'
+            ]
+
+            const differentFiles: Array<{
+                file: string
+                status: 'modified' | 'new' | 'missing'
+                currentExists: boolean
+                remoteExists: boolean
+            }> = []
+
+            for (const file of filesToCompare) {
+                const currentPath = path.join(rootPath, file)
+                const remotePath = path.join(tempDir, file)
+                
+                const currentExists = fs.existsSync(currentPath)
+                const remoteExists = fs.existsSync(remotePath)
+
+                if (!currentExists && remoteExists) {
+                    differentFiles.push({
+                        file,
+                        status: 'new',
+                        currentExists: false,
+                        remoteExists: true
+                    })
+                } else if (currentExists && !remoteExists) {
+                    differentFiles.push({
+                        file,
+                        status: 'missing',
+                        currentExists: true,
+                        remoteExists: false
+                    })
+                } else if (currentExists && remoteExists) {
+                    // Compare file contents
+                    const currentContent = fs.readFileSync(currentPath, 'utf8')
+                    const remoteContent = fs.readFileSync(remotePath, 'utf8')
+                    
+                    if (currentContent !== remoteContent) {
+                        differentFiles.push({
+                            file,
+                            status: 'modified',
+                            currentExists: true,
+                            remoteExists: true
+                        })
+                    }
+                }
+            }
+
+            // Clean up temp directory
+            rimraf.sync(tempDir)
+
+            if (differentFiles.length === 0) {
+                console.log(chalk.green('✓ Workspace is up to date!'))
+                console.log(chalk.gray('No files need to be updated'))
+                return
+            }
+
+            console.log(chalk.yellow(`Found ${differentFiles.length} file(s) with differences:`))
+            differentFiles.forEach((file, index) => {
+                const statusColor = file.status === 'new' ? chalk.green : 
+                                  file.status === 'missing' ? chalk.red : chalk.yellow
+                const statusText = file.status === 'new' ? 'NEW' : 
+                                 file.status === 'missing' ? 'REMOVED' : 'MODIFIED'
+                console.log(`  ${index + 1}. ${file.file} ${statusColor(`[${statusText}]`)}`)
+            })
+
+            // Create choices for file selection
+            const fileChoices = differentFiles.map(file => {
+                const statusColor = file.status === 'new' ? chalk.green : 
+                                  file.status === 'missing' ? chalk.red : chalk.yellow
+                const statusText = file.status === 'new' ? 'NEW' : 
+                                 file.status === 'missing' ? 'REMOVED' : 'MODIFIED'
+                
+                return {
+                    name: `${file.file} ${statusColor(`[${statusText}]`)}`,
+                    value: file.file,
+                    checked: true // Default to selected for update
+                }
+            })
+
+            // Add "Update Selected Files" option at the bottom
+            fileChoices.push({
+                name: chalk.cyan.bold('── Update Selected Files ──'),
+                value: 'UPDATE_FILES',
+                checked: false
+            })
+
+            const { selectedFiles } = await inquirer.prompt([
+                {
+                    type: 'checkbox',
+                    name: 'selectedFiles',
+                    message: 'Select files to update (uncheck to keep current version):',
+                    choices: fileChoices,
+                    validate: (answer: any[]) => {
+                        if (!answer.includes('UPDATE_FILES')) {
+                            return 'You must select "Update Selected Files" to proceed'
+                        }
+                        return true
+                    }
+                }
+            ])
+
+            // Remove the UPDATE_FILES option from the list
+            const filesToUpdate = selectedFiles.filter((file: string) => file !== 'UPDATE_FILES')
+
+            if (filesToUpdate.length === 0) {
+                console.log(chalk.gray('No files selected for update'))
+                return
+            }
+
+            // Show what will be updated vs kept
+            const filesToKeep = differentFiles
+                .map(f => f.file)
+                .filter(file => !filesToUpdate.includes(file))
+
+            if (filesToUpdate.length > 0) {
+                console.log(chalk.green(`\nFiles to be updated (${filesToUpdate.length}):`))
+                filesToUpdate.forEach(file => {
+                    console.log(chalk.green(`  ✓ ${file}`))
+                })
+            }
+
+            if (filesToKeep.length > 0) {
+                console.log(chalk.red(`\nFiles to keep current version (${filesToKeep.length}):`))
+                filesToKeep.forEach(file => {
+                    console.log(chalk.red(`  ✗ ${file}`))
+                })
+            }
+
+            // Confirm update
+            const { confirmUpdate } = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'confirmUpdate',
+                    message: `Update ${filesToUpdate.length} file(s)?`,
+                    default: true
+                }
+            ])
+
+            if (!confirmUpdate) {
+                console.log(chalk.gray('Update cancelled'))
+                return
+            }
+
+            // Download files again for update
+            console.log(chalk.blue('\nDownloading latest files for update...'))
+            if (fs.existsSync(tempDir)) {
+                rimraf.sync(tempDir)
+            }
+
+            try {
+                const degit = require('degit')
+                const repoName = repoUrl.replace('https://github.com/', '')
+                const emitter = degit(repoName)
+                await emitter.clone(tempDir)
+            } catch (error: any) {
+                console.log(chalk.red('✗ Failed to download files for update'))
+                return
+            }
+
+            // Update selected files
+            let updatedCount = 0
+            const errors: string[] = []
+
+            for (const file of filesToUpdate) {
+                try {
+                    const remotePath = path.join(tempDir, file)
+                    const currentPath = path.join(rootPath, file)
+
+                    if (fs.existsSync(remotePath)) {
+                        // Ensure directory exists
+                        const dir = path.dirname(currentPath)
+                        if (!fs.existsSync(dir)) {
+                            fs.mkdirSync(dir, { recursive: true })
+                        }
+
+                        // Copy file
+                        fs.copyFileSync(remotePath, currentPath)
+                        console.log(chalk.green(`  ✓ Updated: ${file}`))
+                        updatedCount++
+                    } else {
+                        // File was removed in remote, ask if should delete local
+                        const { deleteFile } = await inquirer.prompt([
+                            {
+                                type: 'confirm',
+                                name: 'deleteFile',
+                                message: `File "${file}" was removed from repository. Delete local file?`,
+                                default: false
+                            }
+                        ])
+
+                        if (deleteFile && fs.existsSync(currentPath)) {
+                            fs.unlinkSync(currentPath)
+                            console.log(chalk.yellow(`  ✓ Deleted: ${file}`))
+                            updatedCount++
+                        } else {
+                            console.log(chalk.gray(`  - Kept: ${file}`))
+                        }
+                    }
+                } catch (error: any) {
+                    const errorMsg = `Failed to update ${file}: ${error.message}`
+                    console.log(chalk.red(`  ✗ ${errorMsg}`))
+                    errors.push(errorMsg)
+                }
+            }
+
+            // Clean up temp directory
+            rimraf.sync(tempDir)
+
+            console.log('')
+            console.log(chalk.green(`✓ Workspace update completed!`))
+            console.log(chalk.blue(`Updated files: ${updatedCount}`))
+            console.log(chalk.red(`Kept current: ${filesToKeep.length}`))
+
+            if (errors.length > 0) {
+                console.log(chalk.red(`Errors: ${errors.length}`))
+                errors.forEach(error => {
+                    console.log(chalk.red(`  - ${error}`))
+                })
+            }
+
+            if (updatedCount > 0) {
+                console.log('')
+                console.log(chalk.cyan('Recommendations:'))
+                console.log(chalk.gray('1. Review updated files for any breaking changes'))
+                console.log(chalk.gray('2. Test your projects to ensure compatibility'))
+                console.log(chalk.gray('3. Commit changes if everything works correctly'))
+            }
+
+        } catch (error: any) {
+            console.log(chalk.red('✗ Failed to update workspace:'), error.message)
+        }
+    }
+}
+
 export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
     return async () => {
         console.clear()
