@@ -62,23 +62,20 @@ Run these tasks from inside a project (e.g., `cd projects/your_project`):
 - `npm run update-workspace` - Update workspace with newest template configurations
 
 # How to Use
-1. **Install dependencies:**
+1. **Install:**
    ```bash
-   npm i
+   npm init @ackinari/bedrock-workspace
    ```
 2. **Create a new project:**
    ```bash
    npm run new-project
    ```
-3. **Navigate to your project:**
-   ```bash
-   cd projects/project-name
-   ```
-4. **Develop and test:**
+### In the project:
+1. **Develop and test:**
    ```bash
    npm run watch  # Start development with auto-deploy
    ```
-5. **Create the final package:**
+2. **Create the final package:**
    ```bash
    npm run mcaddon  # Generate the .mcaddon file
    ```
