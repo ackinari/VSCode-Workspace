@@ -67,6 +67,6 @@
     ],
     "repository": {
         "type": "git",
-        "url": "https://github.com/ackinari/VSCode-Workspace.git"
+        "url": "git+https://github.com/ackinari/VSCode-Workspace.git"
     }
 }
