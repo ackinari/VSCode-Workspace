@@ -1,43 +1,43 @@
 {
-    "ignoreDeprecations": "6.0",
+    "ignoreDeprecations": "6.0", //* Ignores deprecation warnings for version '6.0' and subsequent versions.
     "compilerOptions": {
         //? = = = important = = =
-        "target": "es2020",
-        "module": "esnext",
-        "lib": ["es2020"],
-        "moduleResolution": "node",
+        "target": "es2020", //* Specifies the ECMAScript version for the JavaScript output. 'es2020' ensures modern code is used where possible.
+        "module": "esnext", //* Specifies the module system for the generated JavaScript. 'esnext' uses the latest ECMAScript module version.
+        "lib": ["es2020"], //* Includes declaration files for the runtime environment. 'es2020' includes ES2020 features.
+        "moduleResolution": "node", //* Specifies how module paths are resolved. 'node' mimics how Node.js finds modules.
 
-        "declaration": false,
-        "noLib": false,
-        "emitDecoratorMetadata": true, //*
-        "experimentalDecorators": true, //*
-        "sourceMap": false, //*
-        "pretty": true,
+        "declaration": false, //* Controls whether to generate .d.ts declaration files. `false` disables their generation.
+        "noLib": false, //* When `false`, standard TypeScript libraries (like 'lib.d.ts') are included.
+        "emitDecoratorMetadata": true,  //* Emits type design metadata for decorators, required by some dependency injection libraries.
+        "experimentalDecorators": true,  //* Enables support for experimental decorators, a feature still in proposal for JavaScript.
+        "sourceMap": false,  //* Determines whether to generate source map files for debugging. `false` disables source map generation.
+        "pretty": true, //* Formats compiler errors to make them more human-readable.
 
         //? = = = user preferences = = =
-        // "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        // "allowUnreachableCode": true, //*
-        // "allowUnusedLabels": true, //*
-        // "noImplicitAny": true, //*
-        "noImplicitReturns": true,
-        // "noImplicitUseStrict": false, //*
-        // "noUnusedLocals": true, //*
-        // "noUnusedParameters": true,
+        // "forceConsistentCasingInFileNames": true, //* Ensures consistent file casing across the project. Uncomment to enable.
+        "strict": true, //* Enables a broad range of stricter type-checking options, promoting safer code.
+        // "allowUnreachableCode": true, //* Allows unreachable code (e.g., after a `return` or `throw`). Uncomment to allow this.
+        // "allowUnusedLabels": true, //* Allows unused labels. Uncomment to allow this.
+        // "noImplicitAny": true,  //* Errors on variables or parameters that have an implicit `any` type.
+        "noImplicitReturns": true, //* Ensures that all code paths in a function return a value.
+        // "noImplicitUseStrict": false,  //* Prevents the compiler from adding 'use strict' at the top of output files.
+        // "noUnusedLocals": true, //* Generates an error for unused local variables.
+        // "noUnusedParameters": true, //* Generates an error for unused function parameters.
 
-        // "noEmit": true, //*
-        "allowJs": true,
-        // "checkJs": false, //*
+        // "noEmit": true,  //* Uncomment to skip generating output files, useful for type-checking only.
+        "allowJs": true, //* Allows JavaScript (`.js`) files to be included in your project.
+        // "checkJs": false,  //* When `false`, ignores errors reported in JavaScript files.
 
         //? = = = others = = =
-        // "outDir": "projects/lib",
-        // "rootDir": ".",
-        "listFiles": false,
-        "noEmitHelpers": true,
-        "skipLibCheck": true,
-        "skipDefaultLibCheck": true,
+        // "outDir": "projects/lib", //* Specifies the output directory for compiled files.
+        // "rootDir": ".", //* Specifies the root directory of the project files.
+        "listFiles": false, //* When `false`, does not print the names of files compiled.
+        "noEmitHelpers": true, //* Doesn't emit helper functions like `__extends`. Requires a bundler or polyfill.
+        "skipLibCheck": true, //* Skips type checking of all declaration files (`.d.ts`), speeding up compilation.
+        "skipDefaultLibCheck": true, //* Skips type checking of default library files. Similar to `skipLibCheck`.
 
-        // "paths": {
+        // "paths": { //* Creates import aliases to resolve modules from a specific directory.
         //     "libraries/*": ["./libraries/*"]
         // }
     },
@@ -45,7 +45,7 @@
         "libraries/**/*.ts"
     ],
     "exclude": [
-        "node_modules", 
+        "node_modules",
         "projects/**/behavior_pack/scripts/**/*",
         "libraries/**/*.js"
     ]
