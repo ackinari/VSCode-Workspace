@@ -41,9 +41,9 @@
         //     "libraries/*": ["./libraries/*"]
         // }
     },
-    "include": [
-        "libraries/**/*.ts"
-    ],
+    // "include": [ //! not implemented yet
+    //     "libraries/**/*.ts"
+    // ],
     "exclude": [
         "node_modules",
         "projects/**/behavior_pack/scripts/**/*",
