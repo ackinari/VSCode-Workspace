@@ -2,31 +2,31 @@ import { argv, parallel, series, task, tscTask, TscTaskOptions } from "just-scri
 import path from "path";
 
 import {
-  STANDARD_CLEAN_PATHS,
-  bundleTask,
-  cleanTask,
-  cleanCollateralTask,
-  copyTask,
-  mcaddonTask,
-  watchTask,
-  coreLint,
-  newProjectTask,
-  updateWorkspaceTask,
-  analyzeProjectTask,
-  backupProjectTask,
-  updateVersionTask,
-  generateUuidsTask,
-  listProjectsTask,
-  openMinecraftFolderTask,
-  cloneProjectTask,
-  deleteProjectTask,
-  renameProjectTask,
-  openProjectTask,
-  listDevelopmentProjectsTask,
-  openWorkspaceTask,
-  debugTask,
-  importDevelopmentProjectsTask,
-  updateBedrockWorkspaceTask,
+    analyzeProjectTask,
+    backupProjectTask,
+    bundleTask,
+    cleanCollateralTask,
+    cleanTask,
+    cloneProjectTask,
+    copyTask,
+    coreLint,
+    debugTask,
+    deleteProjectTask,
+    generateUuidsTask,
+    importDevelopmentProjectsTask,
+    listDevelopmentProjectsTask,
+    listProjectsTask,
+    mcaddonTask,
+    newProjectTask,
+    openMinecraftFolderTask,
+    openProjectTask,
+    openWorkspaceTask,
+    renameProjectTask,
+    STANDARD_CLEAN_PATHS,
+    updateBedrockWorkspaceTask,
+    updateVersionTask,
+    updateWorkspaceTask,
+    watchTask,
 } from "./.vscode/build-tasks";
 
 //§e = = = = = = = = default configs = = = = = = = = 
@@ -88,8 +88,8 @@ const mcaddonTaskOptions = {
 
 const watchOptions = [
   `${config.project}/tscripts/**/*.{ts,js}`,
-  `${config.behaviorPack}/**/*.{json,lang,tga,ogg,png}`,
-  `${config.resourcePack}/**/*.{json,lang,tga,ogg,png}`,
+  `${config.behaviorPack}/**/*.{json,lang,tga,ogg,png,material}`,
+  `${config.resourcePack}/**/*.{json,lang,tga,ogg,png,material}`,
 ];
 
 //§e = = = = = = = = tasks list = = = = = = = = 
