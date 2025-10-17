@@ -1562,25 +1562,35 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
         const deploymentBehaviorPath = path.join(deploymentPath, BehaviorPacksPath, projectName + '_BP')
         const deploymentResourcePath = path.join(deploymentPath, ResourcePacksPath, projectName + '_RP')
 
+        const logs = []
         try {
-            if (!fs.existsSync(deploymentBehaviorPath)) {
-                fs.symlinkSync(projectBehaviorPath, deploymentBehaviorPath, 'junction')
-                console.log(chalk.green('✓ Behavior pack Symlink created'))
-            } else {
-                console.log(chalk.gray('? Behavior pack Symlink already exists'))
+            if (fs.existsSync(projectBehaviorPath)) {
+                if (!fs.existsSync(deploymentBehaviorPath)) {
+                    fs.symlinkSync(projectBehaviorPath, deploymentBehaviorPath, 'junction')
+                    console.log(chalk.green('✓ Behavior pack Symlink created'))
+                    logs.push(`Behavior Pack: ${deploymentBehaviorPath}`)
+                } else {
+                    console.log(chalk.gray('? Behavior pack Symlink already exists'))
+                }
             }
 
-            if (!fs.existsSync(deploymentResourcePath)) {
-                fs.symlinkSync(projectResourcePath, deploymentResourcePath, 'junction')
-                console.log(chalk.green('✓ Resource pack Symlink created'))
-            } else {
-                console.log(chalk.gray('? Resource pack Symlink already exists'))
+            if (fs.existsSync(projectResourcePath)) {
+                if (!fs.existsSync(deploymentResourcePath)) {
+                    fs.symlinkSync(projectResourcePath, deploymentResourcePath, 'junction')
+                    console.log(chalk.green('✓ Resource pack Symlink created'))
+                    logs.push(`Resource Pack: ${deploymentResourcePath}`)
+                } else {
+                    console.log(chalk.gray('? Resource pack Symlink already exists'))
+                }
             }
 
-            console.log('')
-            console.log(chalk.white.bold('CREATED SYMLINKS'))
-            console.log(`Behavior Pack: ${deploymentBehaviorPath}`)
-            console.log(`Resource Pack: ${deploymentResourcePath}`)
+            if (logs.length > 0) {
+                console.log('')
+                console.log(chalk.white.bold('CREATED SYMLINKS'))
+                logs.forEach(log => console.log(log))
+            } else {
+                console.log(chalk.red.bold('0 SYMLINKS CREATED'))
+            }
         } catch (error: any) {
             console.log(chalk.red('✗ Failed to create symlink:'), error.message)
         }
