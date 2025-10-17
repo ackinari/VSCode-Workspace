@@ -258,6 +258,18 @@
                 "clear": true,
             },
             "detail": "Open workspace root in VS Code"
+        },
+        {
+            "label": "Create Symlink",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "create-symlink"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+            },
+            "detail": "Create a windows Symlink at local Minecraft folder"
         }
     ]
 }

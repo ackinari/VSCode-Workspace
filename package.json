@@ -39,6 +39,7 @@
         "copyArtifacts": "cross-env \"REAL_CWD=%CD%\" just-scripts copyArtifacts",
         "local-deploy": "cross-env \"REAL_CWD=%CD%\" just-scripts local-deploy",
         "watch": "cross-env \"REAL_CWD=%CD%\" just-scripts local-deploy --watch",
+        "create-symlink": "cross-env \"REAL_CWD=%CD%\" just-scripts create-symlink",
         "lint": "cross-env \"REAL_CWD=%CD%\" just-scripts lint",
         "mcaddon": "cross-env \"REAL_CWD=%CD%\" just-scripts mcaddon",
         "new-project": "just-scripts new-project",

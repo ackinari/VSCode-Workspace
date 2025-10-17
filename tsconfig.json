@@ -15,6 +15,7 @@
         "pretty": true, //* Formats compiler errors to make them more human-readable.
 
         //? = = = user preferences = = =
+        "allowSyntheticDefaultImports": true, //* Allow 'import x from y' when a module doesn't have a default export.
         // "forceConsistentCasingInFileNames": true, //* Ensures consistent file casing across the project. Uncomment to enable.
         "strict": true, //* Enables a broad range of stricter type-checking options, promoting safer code.
         // "allowUnreachableCode": true, //* Allows unreachable code (e.g., after a `return` or `throw`). Uncomment to allow this.

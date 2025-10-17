@@ -1,14 +1,13 @@
-import * as esbuild from 'esbuild'
-import * as fs from 'fs'
-import * as path from 'path'
-import * as dotenv from 'dotenv'
-import * as rimraf from 'rimraf'
 import * as rushstack from '@rushstack/node-core-library'
-import * as just_scripts from 'just-scripts'
-import * as zip_lib from 'zip-lib'
 import * as child_process from 'child_process'
 import * as crypto from 'crypto'
-import * as readline from 'readline'
+import * as dotenv from 'dotenv'
+import * as esbuild from 'esbuild'
+import * as fs from 'fs'
+import * as just_scripts from 'just-scripts'
+import * as path from 'path'
+import * as rimraf from 'rimraf'
+import * as zip_lib from 'zip-lib'
 
 const chalk = require('chalk')
 const inquirer = require('inquirer')
@@ -632,7 +631,8 @@ function copyFiles(originPaths: string[], outputPath: string, skipIfPossible: bo
     }
 }
 
-function getGameDeploymentRootPaths(): Record<string, string | undefined> {
+type GameDeploymentRootPaths = {BedrockGDK?: string, PreviewGDK?: string, BedrockUWP?: string, PreviewUWP?: string, Custom?: string}
+function getGameDeploymentRootPaths(): GameDeploymentRootPaths {
     const localAppDataPath = process.env['LOCALAPPDATA']
     const appDataPath = process.env['APPDATA']
     const customDeploymentPath = process.env['CUSTOM_DEPLOYMENT_PATH']
@@ -641,7 +641,7 @@ function getGameDeploymentRootPaths(): Record<string, string | undefined> {
         PreviewGDK: appDataPath ? path.resolve(appDataPath, 'Minecraft Bedrock Preview/Users/Shared/games/com.mojang/') : undefined,
         BedrockUWP: localAppDataPath ? path.resolve(localAppDataPath, 'Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState/games/com.mojang/') : undefined,
         PreviewUWP: localAppDataPath ? path.resolve(localAppDataPath, 'Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState/games/com.mojang/') : undefined,
-        Custom: customDeploymentPath ? customDeploymentPath : undefined,
+        Custom: customDeploymentPath || undefined,
     }
 }
 
@@ -1544,6 +1544,48 @@ export function backupProjectTask(projectPath: string, rootPath: string): TaskFu
     }
 }
 
+
+export function createSymlink(projectPath: string, projectName: string): TaskFunction {
+    return () => {
+        if (!validateProjectContext(projectPath)) return
+
+        console.log(chalk.yellow('Creating new Symlink for project...'))
+
+        const projectBehaviorPath = path.join(projectPath, 'behavior_pack')
+        const projectResourcePath = path.join(projectPath, 'resource_pack')
+        
+        const deploymentPath = getGameDeploymentRootPaths().PreviewGDK
+        if (deploymentPath === undefined) {
+            throw new Error('Deployment path is undefined. Make sure you have the right minecraft version installed (Minecraft GDK).')
+        }
+
+        const deploymentBehaviorPath = path.join(deploymentPath, BehaviorPacksPath, projectName + '_BP')
+        const deploymentResourcePath = path.join(deploymentPath, ResourcePacksPath, projectName + '_RP')
+
+        try {
+            if (!fs.existsSync(deploymentBehaviorPath)) {
+                fs.symlinkSync(projectBehaviorPath, deploymentBehaviorPath, 'junction')
+                console.log(chalk.green('✓ Behavior pack Symlink created'))
+            } else {
+                console.log(chalk.gray('? Behavior pack Symlink already exists'))
+            }
+
+            if (!fs.existsSync(deploymentResourcePath)) {
+                fs.symlinkSync(projectResourcePath, deploymentResourcePath, 'junction')
+                console.log(chalk.green('✓ Resource pack Symlink created'))
+            } else {
+                console.log(chalk.gray('? Resource pack Symlink already exists'))
+            }
+
+            console.log('')
+            console.log(chalk.white.bold('CREATED SYMLINKS'))
+            console.log(`Behavior Pack: ${deploymentBehaviorPath}`)
+            console.log(`Resource Pack: ${deploymentResourcePath}`)
+        } catch (error: any) {
+            console.log(chalk.red('✗ Failed to create symlink:'), error.message)
+        }
+    }
+}
 
 export function generateUuidsTask(projectPath: string): TaskFunction {
     return () => {
