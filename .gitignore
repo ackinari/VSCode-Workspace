@@ -12,6 +12,7 @@ package-lock.json
 TODO.md
 
 # personal
+bun.lock
 backups/*
 projects/*
 !projects/template/
