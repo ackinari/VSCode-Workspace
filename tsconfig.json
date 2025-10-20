@@ -31,8 +31,6 @@
         // "checkJs": false,  //* When `false`, ignores errors reported in JavaScript files.
 
         //? = = = others = = =
-        // "outDir": "projects/lib", //* Specifies the output directory for compiled files.
-        // "rootDir": ".", //* Specifies the root directory of the project files.
         "listFiles": false, //* When `false`, does not print the names of files compiled.
         "noEmitHelpers": true, //* Doesn't emit helper functions like `__extends`. Requires a bundler or polyfill.
         "skipLibCheck": true, //* Skips type checking of all declaration files (`.d.ts`), speeding up compilation.
