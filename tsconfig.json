@@ -35,14 +35,7 @@
         "noEmitHelpers": true, //* Doesn't emit helper functions like `__extends`. Requires a bundler or polyfill.
         "skipLibCheck": true, //* Skips type checking of all declaration files (`.d.ts`), speeding up compilation.
         "skipDefaultLibCheck": true, //* Skips type checking of default library files. Similar to `skipLibCheck`.
-
-        // "paths": { //* Creates import aliases to resolve modules from a specific directory.
-        //     "libraries/*": ["./libraries/*"]
-        // }
     },
-    // "include": [ //! not implemented yet
-    //     "libraries/**/*.ts"
-    // ],
     "exclude": [
         "node_modules",
         "projects/**/behavior_pack/scripts/**/*",
