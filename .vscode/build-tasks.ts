@@ -2140,26 +2140,7 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
         try {
             console.log(chalk.blue('Checking for workspace updates...'))
             
-            // Get the repository URL from git config or use default
-            let repoUrl: string
-            try {
-                const remoteUrl = child_process.execSync('git config --get remote.origin.url', { 
-                    cwd: rootPath, 
-                    encoding: 'utf8' 
-                }).trim()
-                
-                // Convert SSH URL to HTTPS if needed
-                if (remoteUrl.startsWith('git@github.com:')) {
-                    repoUrl = remoteUrl.replace('git@github.com:', 'https://github.com/').replace('.git', '')
-                } else {
-                    repoUrl = remoteUrl.replace('.git', '')
-                }
-            } catch (error) {
-                // Fallback to default repository URL when git is not available
-                console.log(chalk.yellow('⚠ Git repository not found, using default repository'))
-                repoUrl = 'https://github.com/ackinari/VSCode-Workspace'
-            }
-
+            let repoUrl = 'https://github.com/ackinari/VSCode-Workspace'
             console.log(chalk.gray(`Repository: ${repoUrl}`))
 
             // Create temporary directory for comparison
