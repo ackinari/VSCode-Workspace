@@ -1,7 +1,5 @@
-import { world, system } from "@minecraft/server";
+import { system, world } from "@minecraft/server";
 
-console.log("Hello from template project!");
-
-export function templateFunction(): string {
-    return "This is from template project";
-}
+system.run(() => {
+    world.sendMessage('Hello, World!')
+})
