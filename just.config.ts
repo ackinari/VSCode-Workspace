@@ -123,7 +123,6 @@ const TASK_LIST: Record<string, Function> = {
 
     // project management
     'update-workspace': () => updateWorkspaceTask(config.paths.project, config.paths.root),
-    'update-bedrock-workspace': () => updateBedrockWorkspaceTask(config.paths.root),
     'analyze': () => analyzeProjectTask(config.paths.project),
     'backup': () => backupProjectTask(config.paths.project, config.paths.root),
     'update-version': () => updateVersionTask(config.paths.project),
@@ -143,6 +142,8 @@ const TASK_LIST: Record<string, Function> = {
 
     'open-mc-folder': () => openMinecraftFolderTask(),
     'open-workspace': () => openWorkspaceTask(config.paths.root),
+
+    'update-bedrock-workspace': () => updateBedrockWorkspaceTask(config.paths.root),
 } as const
 
 for (const [name, _function] of Object.entries(TASK_LIST)) {
