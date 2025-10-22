@@ -1,15 +1,14 @@
-import { argv, parallel, series, task, tscTask, TscTaskOptions } from 'just-scripts'
+import { parallel, series, task, tscTask, TscTaskOptions } from 'just-scripts'
 import path from 'path'
 
 import {
     analyzeProjectTask,
     backupProjectTask,
-    bundleTask,
     cleanCollateralTask,
     cleanTask,
     cloneProjectTask,
+    conditionalTypeScriptTask,
     copyTask,
-    coreLint,
     createSymlink,
     debugTask,
     deleteProjectTask,
@@ -32,142 +31,120 @@ import {
 
 //§e = = = = = = = = default configs = = = = = = = =
 
-const projectDir = process.env.REAL_CWD || process.cwd()
-const projectName = path.basename(projectDir)
+const ROOT = path.resolve(__dirname)
 
-let actualProjectName = projectName
-
-if (process.env.INIT_CWD && process.env.INIT_CWD.includes('projects')) {
-    actualProjectName = path.basename(process.env.INIT_CWD)
-} else if (process.env.REAL_CWD && process.env.REAL_CWD.includes('projects')) {
-    actualProjectName = path.basename(process.env.REAL_CWD)
-} else if (projectDir.includes('projects') && projectDir !== path.resolve(__dirname)) {
-    actualProjectName = path.basename(projectDir)
+const ENV = {
+    REAL_CWD: process.env.REAL_CWD,
+    INIT_CWD: process.env.INIT_CWD,
+    CWD: process.cwd(),
 }
 
-const paths = {
-    root: path.resolve(__dirname),
-    project: path.resolve(__dirname, 'projects', actualProjectName),
-    projectDist: path.resolve(__dirname, 'projects', actualProjectName, 'dist'),
-}
+const BASE_PROJECT_DIR =
+    ENV.INIT_CWD?.includes('projects') ? ENV.INIT_CWD :
+    ENV.REAL_CWD?.includes('projects') ? ENV.REAL_CWD :
+    ENV.CWD?.includes('projects') && ENV.CWD !== ROOT ? ENV.CWD :
+    ENV.CWD
+
+const PROJECT_NAME = path.basename(BASE_PROJECT_DIR)
+
+const joinRoot = (...args: string[]) => path.resolve(ROOT, ...args)
+const joinProject = (...args: string[]) => path.resolve(ROOT, 'projects', PROJECT_NAME, ...args)
 
 export const config = {
-    projectName: actualProjectName,
-    project: paths.project,
-    entry: path.join(paths.project, 'tscripts/main.ts'),
-    outFile: path.join(paths.projectDist, 'scripts/main.js'),
-    behaviorPack: path.join(paths.project, 'behavior_pack'),
-    resourcePack: path.join(paths.project, 'resource_pack'),
-    packageFile: path.join(paths.projectDist, `${actualProjectName}.mcaddon`),
+    env: ENV,
+    root: ROOT,
+    projectName: PROJECT_NAME,
+    paths: {
+        root: ROOT,
+        project: joinProject(),
+        dist: joinProject('dist'),
+        tsEntry: joinProject('tscripts', 'main.ts'),
+        jsOut: joinProject('dist', 'scripts', 'main.js'),
+        behaviorPack: joinProject('behavior_pack'),
+        resourcePack: joinProject('resource_pack'),
+        packageFile: joinProject('dist', `${PROJECT_NAME}.mcaddon`),
+    },
 }
 
 //§e = = = = = = = = task configs = = = = = = = =
 
-const bundleTaskOptions = {
-    entryPoint: config.entry,
-    external: ['@minecraft/server', '@minecraft/server-ui'],
-    outfile: config.outFile,
-    minifyWhitespace: true,
-}
+const TASK_LIST: Record<string, Function> = {
+    'debug': () => debugTask(config.paths.project),
 
-const copyTaskOptions = {
-    copyToBehaviorPacks: [config.behaviorPack],
-    copyToResourcePacks: [config.resourcePack],
-}
+    'typescript': (
+        options = {
+            outDir: path.join(config.paths.behaviorPack, 'scripts'),
+            rootDir: path.join(config.paths.project, 'tscripts'),
+            project: path.join(config.paths.project, 'tsconfig.json'),
+        } as TscTaskOptions
+    ) => tscTask(options),
 
-const typescriptOptions: TscTaskOptions = {
-    outDir: path.join(config.behaviorPack, 'scripts'),
-    rootDir: path.join(config.project, 'tscripts'),
-    project: path.join(config.project, 'tsconfig.json'),
-}
+    'clean-local': (
+        dirs = [path.join(config.paths.behaviorPack, 'scripts')]
+    ) => cleanTask(dirs),
 
-const mcaddonTaskOptions = {
-    copyToBehaviorPacks: [config.behaviorPack],
-    copyToResourcePacks: [config.resourcePack],
-    outputFile: config.packageFile,
-}
+    'clean-collateral': () => cleanCollateralTask(STANDARD_CLEAN_PATHS, config.projectName),
+    'clean': () => parallel('clean-local', 'clean-collateral'),
 
-const watchOptions = [
-    `${config.project}/tscripts/**/*.{ts,js}`,
-    `${config.behaviorPack}/**/*.{json,png,js}`,
-    `${config.resourcePack}/**/*.{json,lang,tga,ogg,png,material}`
-]
+    'copyArtifacts': (
+        options = {
+            copyToBehaviorPacks: [config.paths.behaviorPack],
+            copyToResourcePacks: [config.paths.resourcePack],
+        }
+    ) => copyTask(options, config.projectName),
 
-//§e = = = = = = = = tasks list = = = = = = = =
+    'build': () => series('clean-collateral', 'copyArtifacts'),
 
-const TASKS = {
-    DEBUG: 'debug',
-    LINT: 'lint',
-    TYPESCRIPT: 'typescript',
-    BUNDLE: 'bundle',
-    BUILD: 'build',
-    CLEAN_LOCAL: 'clean-local',
-    CLEAN_COLLATERAL: 'clean-collateral',
-    CLEAN: 'clean',
-    COPY: 'copyArtifacts',
-    PACKAGE: 'package',
-    DEPLOY: 'local-deploy',
-    CREATE_MCADDON: 'createMcaddonFile',
-    MCADDON: 'mcaddon',
-    NEW_PROJECT: 'new-project',
-    UPDATE_WORKSPACE: 'update-workspace',
-    UPDATE_BEDROCK_WORKSPACE: 'update-bedrock-workspace',
-    ANALYZE: 'analyze',
-    BACKUP: 'backup',
-    UPDATE_VERSION: 'update-version',
-    GENERATE_UUIDS: 'generate-uuids',
-    LIST_PROJECTS: 'list-projects',
-    OPEN_MC_FOLDER: 'open-mc-folder',
-    CLONE_PROJECT: 'clone-project',
-    DELETE_PROJECT: 'delete-project',
-    RENAME_PROJECT: 'rename-project',
-    OPEN_PROJECT: 'open-project',
-    LIST_DEVELOPMENT_PROJECTS: 'list-development-projects',
-    OPEN_WORKSPACE: 'open-workspace',
-    IMPORT_DEVELOPMENT_PROJECTS: 'import-development-projects',
-    CREATE_SYMLINK: 'create-symlink',
+    'local-deploy': (
+        globs = [
+            `${config.paths.project}/tscripts/**/*.{ts,js}`,
+            `${config.paths.behaviorPack}/**/*.{json,png,js}`,
+            `${config.paths.resourcePack}/**/*.{json,lang,tga,ogg,png,material}`,
+        ]
+    ) => conditionalTypeScriptTask(
+        config.paths.project,
+        watchTask(globs, series('clean-local', 'typescript', 'build') as any),
+        watchTask(globs, series('build') as any)
+    ),
+
+    'createMcaddonFile': (
+        options = {
+            copyToBehaviorPacks: [config.paths.behaviorPack],
+            copyToResourcePacks: [config.paths.resourcePack],
+            outputFile: config.paths.packageFile,
+        }
+    ) => mcaddonTask(options),
+
+    'mcaddon': () => conditionalTypeScriptTask(
+        config.paths.project,
+        series('clean-local', 'typescript', 'build', 'createMcaddonFile'),
+        series('build', 'createMcaddonFile')
+    ),
+
+    // project management
+    'update-workspace': () => updateWorkspaceTask(config.paths.project, config.paths.root),
+    'update-bedrock-workspace': () => updateBedrockWorkspaceTask(config.paths.root),
+    'analyze': () => analyzeProjectTask(config.paths.project),
+    'backup': () => backupProjectTask(config.paths.project, config.paths.root),
+    'update-version': () => updateVersionTask(config.paths.project),
+    'generate-uuids': () => generateUuidsTask(config.paths.project),
+    'create-symlink': () => createSymlink(config.paths.project, config.projectName),
+
+    // workspace
+    'new-project': () => newProjectTask(config.paths.root),
+    'open-project': () => openProjectTask(config.paths.root),
+    'list-projects': () => listProjectsTask(config.paths.root),
+    'clone-project': () => cloneProjectTask(config.paths.root),
+    'rename-project': () => renameProjectTask(config.paths.root),
+    'delete-project': () => deleteProjectTask(config.paths.root),
+
+    'list-development-projects': () => listDevelopmentProjectsTask(),
+    'import-development-projects': () => importDevelopmentProjectsTask(config.paths.root),
+
+    'open-mc-folder': () => openMinecraftFolderTask(),
+    'open-workspace': () => openWorkspaceTask(config.paths.root),
 } as const
 
-//§e = = = = = = = = tasks = = = = = = = =
-
-task(TASKS.DEBUG, debugTask(paths.project))
-
-task(TASKS.LINT, coreLint(['scripts/**/*.ts'], argv().fix))
-
-task(TASKS.TYPESCRIPT, tscTask(typescriptOptions))
-task(TASKS.BUNDLE, bundleTask(bundleTaskOptions))
-task(TASKS.BUILD, series(TASKS.TYPESCRIPT, TASKS.BUNDLE))
-
-task(TASKS.CLEAN_LOCAL, cleanTask([typescriptOptions.outDir as string]))
-task(TASKS.CLEAN_COLLATERAL, cleanCollateralTask(STANDARD_CLEAN_PATHS, config.projectName))
-task(TASKS.CLEAN, parallel(TASKS.CLEAN_LOCAL, TASKS.CLEAN_COLLATERAL))
-
-task(TASKS.COPY, copyTask(copyTaskOptions, config.projectName))
-task(TASKS.PACKAGE, series(TASKS.CLEAN_COLLATERAL, TASKS.COPY))
-
-task(TASKS.DEPLOY, watchTask(watchOptions, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE) as any))
-
-task(TASKS.CREATE_MCADDON, mcaddonTask(mcaddonTaskOptions))
-task(TASKS.MCADDON, series(TASKS.CLEAN_LOCAL, TASKS.TYPESCRIPT, TASKS.PACKAGE, TASKS.CREATE_MCADDON))
-
-task(TASKS.NEW_PROJECT, newProjectTask(paths.root))
-
-// Project management tasks
-task(TASKS.UPDATE_WORKSPACE, updateWorkspaceTask(paths.project, paths.root))
-task(TASKS.UPDATE_BEDROCK_WORKSPACE, updateBedrockWorkspaceTask(paths.root))
-task(TASKS.ANALYZE, analyzeProjectTask(paths.project))
-task(TASKS.BACKUP, backupProjectTask(paths.project, paths.root))
-task(TASKS.UPDATE_VERSION, updateVersionTask(paths.project))
-task(TASKS.GENERATE_UUIDS, generateUuidsTask(paths.project))
-task(TASKS.CREATE_SYMLINK, createSymlink(paths.project, config.projectName))
-
-// Workspace tasks
-task(TASKS.LIST_PROJECTS, listProjectsTask(paths.root))
-task(TASKS.OPEN_MC_FOLDER, openMinecraftFolderTask())
-task(TASKS.CLONE_PROJECT, cloneProjectTask(paths.root))
-task(TASKS.DELETE_PROJECT, deleteProjectTask(paths.root))
-task(TASKS.RENAME_PROJECT, renameProjectTask(paths.root))
-task(TASKS.OPEN_PROJECT, openProjectTask(paths.root))
-task(TASKS.LIST_DEVELOPMENT_PROJECTS, listDevelopmentProjectsTask())
-task(TASKS.OPEN_WORKSPACE, openWorkspaceTask(paths.root))
-task(TASKS.IMPORT_DEVELOPMENT_PROJECTS, importDevelopmentProjectsTask(paths.root))
+for (const [name, _function] of Object.entries(TASK_LIST)) {
+    task(name, _function())
+}
