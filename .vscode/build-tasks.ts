@@ -2,7 +2,6 @@ import * as rushstack from '@rushstack/node-core-library'
 import * as child_process from 'child_process'
 import * as crypto from 'crypto'
 import * as dotenv from 'dotenv'
-import * as esbuild from 'esbuild'
 import * as fs from 'fs'
 import * as just_scripts from 'just-scripts'
 import * as path from 'path'
@@ -427,110 +426,6 @@ export function setupEnvironment(envPath: string): void {
     dotenv.config({path: envPath})
 }
 
-const MAP_EXTENSION = '.map'
-
-function isRequiredToMakeAnyFileChange(sourcemap: boolean | string | undefined): boolean {
-    return sourcemap !== false && sourcemap !== 'inline'
-}
-
-function isRequiredToLinkJsFile(sourcemap: boolean | string | undefined): boolean {
-    return sourcemap === true || sourcemap === 'linked'
-}
-
-function linkSourceMaps(
-    sourceMapDirectory: string,
-    outputDirectory: string,
-    options: BundleOptions,
-    outputFiles: esbuild.OutputFile[]
-): Record<string, string> {
-    const generatedFiles: Record<string, string> = {}
-    for (const element of outputFiles) {
-        if (element.path.endsWith(MAP_EXTENSION)) {
-            const parsedPath = path.parse(element.path)
-            const sourceMapFilePath = path.join(sourceMapDirectory, parsedPath.base)
-            const sourceMapContent = JSON.parse(element.text)
-            sourceMapContent.file = path.relative(sourceMapDirectory, path.join(outputDirectory, parsedPath.name)).replace(/\\/g, '/')
-            generatedFiles[sourceMapFilePath] = JSON.stringify(sourceMapContent)
-        } else if (isRequiredToLinkJsFile(options.sourcemap)) {
-            const dir = path.parse(element.path).dir
-            const targetSourceMap = path.join(path.relative(dir, sourceMapDirectory), path.parse(element.path).base).replace(/\\/g, '/')
-            generatedFiles[element.path] =
-                element.text +
-                `
-//# sourceMappingURL=${targetSourceMap}${MAP_EXTENSION}
-`
-        } else {
-            generatedFiles[element.path] = element.text
-        }
-    }
-    return generatedFiles
-}
-
-function writeFiles(postProcessOutputFilesResult: {
-    outputDirectory: string
-    sourceMapDirectory: string
-    generatedFiles: Record<string, string>
-}): void {
-    fs.mkdirSync(postProcessOutputFilesResult.outputDirectory, {
-        recursive: true,
-    })
-    if (postProcessOutputFilesResult.sourceMapDirectory !== postProcessOutputFilesResult.outputDirectory) {
-        fs.mkdirSync(postProcessOutputFilesResult.sourceMapDirectory, {
-            recursive: true,
-        })
-    }
-    for (const filePath of Object.keys(postProcessOutputFilesResult.generatedFiles)) {
-        fs.writeFileSync(filePath, postProcessOutputFilesResult.generatedFiles[filePath])
-    }
-}
-
-function postProcessOutputFiles(options: BundleOptions, buildResult: esbuild.BuildResult): {
-    sourceMapDirectory: string
-    outputDirectory: string
-    generatedFiles: Record<string, string>
-} | undefined {
-    if (!buildResult.outputFiles) {
-        return undefined
-    }
-    const outputDirectory = path.parse(options.outfile).dir
-    const sourceMapDirectory = path.resolve(options.outputSourcemapPath ?? outputDirectory)
-    const generatedFiles = linkSourceMaps(sourceMapDirectory, outputDirectory, options, buildResult.outputFiles)
-    return {sourceMapDirectory, outputDirectory, generatedFiles}
-}
-
-//! broken since there is no sourceMap system anymore
-export function bundleTask(options: BundleOptions): TaskFunction {
-    return () => {
-        const isRequiredToMakeChanges = isRequiredToMakeAnyFileChange(options.sourcemap)
-        const isRequiredToLinkJs = isRequiredToLinkJsFile(options.sourcemap)
-        const buildResult = esbuild.buildSync({
-            entryPoints: [options.entryPoint],
-            bundle: true,
-            format: 'esm',
-            minifyWhitespace: options.minifyWhitespace,
-            outfile: options.outfile,
-            sourcemap: isRequiredToLinkJs ? 'external' : options.sourcemap as boolean | 'external' | 'linked' | 'inline' | 'both' | undefined,
-            external: options.external,
-            write: !isRequiredToMakeChanges,
-            dropLabels: options.dropLabels,
-            alias: options.alias,
-        })
-        if (buildResult.errors.length === 0) {
-            if (isRequiredToMakeChanges) {
-                if (!buildResult.outputFiles) {
-                    return Promise.reject(new Error('No output files were generated, check that your entrypoint file is configured correctly.'))
-                }
-                const result = postProcessOutputFiles(options, buildResult)
-                if (result) {
-                    writeFiles(result)
-                }
-            }
-            return Promise.resolve()
-        }
-        return Promise.reject(new Error(buildResult.errors.join('\n')))
-    }
-}
-
 export function cleanTask(dirs: string[]): TaskFunction {
     return () => {
         for (const dir of dirs) {
@@ -671,6 +566,29 @@ just_scripts.option('watch')
 
 function executeTask(taskFunction: TaskFunction): void {
     void (taskFunction as any).call(undefined, () => {})
+}
+
+export function conditionalTypeScriptTask(projectPath: string, typeScriptTask: any, fallbackTask: any): any {
+    return function(this: any) {
+        const tscriptsPath = path.join(projectPath, 'tscripts')
+        const hasTypeScript = fs.existsSync(tscriptsPath)
+        
+        if (hasTypeScript) {
+            console.log(chalk.blue('TypeScript project detected, compiling...'))
+            const task = typeScriptTask
+            if (typeof task === 'function') {
+                return task.call(this)
+            }
+            return task
+        } else {
+            console.log(chalk.gray('JavaScript project detected, skipping TypeScript compilation...'))
+            const task = fallbackTask
+            if (typeof task === 'function') {
+                return task.call(this)
+            }
+            return task
+        }
+    }
 }
 
 export function watchTask(globs: string[], taskFunction: TaskFunction): TaskFunction {
