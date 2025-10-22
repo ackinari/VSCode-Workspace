@@ -784,38 +784,7 @@ export function mcaddonTask(params: McAddonTaskParams): TaskFunction {
     }
 }
 
-const LEGACY_CONFIG_FILES = ['.eslintrc.js']
-const FLAT_CONFIG_FILES = ['eslint.config.js', 'eslint.config.mjs', 'eslint.config.cjs']
-const POSSIBLE_CONFIG_FILES = [...LEGACY_CONFIG_FILES, ...FLAT_CONFIG_FILES]
-
-function getConfigFilePath(): string | undefined {
-    for (const file of POSSIBLE_CONFIG_FILES) {
-        const configPath = path.resolve(process.cwd(), file)
-        if (fs.existsSync(configPath)) {
-            return configPath
-        }
-    }
-    return undefined
-}
-
-function eslintTask(fix: boolean): TaskFunction {
-    return () => {
-        const configFilePath = getConfigFilePath()
-        if (!configFilePath) {
-            return Promise.resolve()
-        }
-        process.env['ESLINT_USE_FLAT_CONFIG'] = FLAT_CONFIG_FILES.some((file) => configFilePath.endsWith(file)) ? 'true' : 'false'
-        const cmd = ['npx', 'eslint', '.', '--config', `"${configFilePath}"`, ...(fix ? ['--fix'] : []), '--color'].join(' ')
-        just_scripts.logger.info(`Running command: ${cmd}`)
-        try {
-            child_process.execSync(cmd, {stdio: 'inherit'})
-            return Promise.resolve()
-        } catch (error) {
-            return Promise.reject(error)
-        }
-    }
-}
-
+//! outdated
 function prettierTask(files: string[], fix: boolean): TaskFunction {
     return () => {
         if (!files || files.length === 0) {
@@ -829,22 +798,6 @@ function prettierTask(files: string[], fix: boolean): TaskFunction {
             return Promise.reject(error)
         }
     }
-}
-
-//! kind broken
-export function coreLint(prettierFiles: string[], fix: boolean) {
-    just_scripts.task('verify-lint', () => {
-        if (!getConfigFilePath()) {
-            throw new Error(`ESLint config file not found at ${process.cwd()}. Possible values: [${POSSIBLE_CONFIG_FILES.join(', ')}]`)
-        }
-    })
-    just_scripts.task('eslint', eslintTask(fix))
-    just_scripts.task('prettier', prettierTask(prettierFiles, fix))
-    return just_scripts.series(
-        'verify-lint',
-        'eslint',
-        just_scripts.condition('prettier', () => !!prettierFiles && prettierFiles.length > 0)
-    )
 }
 
 //! broken
@@ -2308,7 +2261,6 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
             // Compare files and find differences
             const filesToCompare = [
                 '.prettierrc.json',
-                'eslint.config.mjs',
                 'just.config.ts',
                 'package.json',
                 'tsconfig.json',

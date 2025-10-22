@@ -20,7 +20,7 @@
         "**/bun.lock": true,
         "**/tsconfig.temp.json": true,
         // "**/package.json": true,
-        "**/just.config.ts": true,
+        // "**/just.config.ts": true,
         // "**/tsconfig.json": true,
         // "**/.prettierrc.json": true,
 
