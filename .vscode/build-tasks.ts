@@ -1162,64 +1162,6 @@ export function openProjectTask(rootPath: string): TaskFunction {
     }
 }
 
-export function updateWorkspaceTask(projectPath: string, rootPath: string): TaskFunction {
-    return () => {
-        if (!validateProjectContext(projectPath)) return
-
-        console.clear()
-        console.log(chalk.cyan.bold('Update Workspace'))
-        console.log(chalk.gray('─'.repeat(50)))
-
-        const templatePath = path.join(rootPath, 'projects', 'template')
-        
-        try {
-            const filesToUpdate = [
-                { src: '.vscode/tasks.json', dest: '.vscode/tasks.json', name: 'VS Code tasks' },
-                { src: '.vscode/settings.json', dest: '.vscode/settings.json', name: 'VS Code settings' },
-                { src: 'tsconfig.json', dest: 'tsconfig.json', name: 'TypeScript configuration' }
-            ]
-
-            let updatedCount = 0
-
-            filesToUpdate.forEach(file => {
-                const srcPath = path.join(templatePath, file.src)
-                const destPath = path.join(projectPath, file.dest)
-
-                if (fs.existsSync(srcPath)) {
-                    try {
-                        const destDir = path.dirname(destPath)
-                        if (!fs.existsSync(destDir)) {
-                            fs.mkdirSync(destDir, { recursive: true })
-                        }
-
-                        rushstack.FileSystem.copyFiles({
-                            sourcePath: srcPath,
-                            destinationPath: destPath,
-                            preserveTimestamps: true,
-                        })
-
-                        console.log(chalk.green(`✓ Updated ${file.name}`))
-                        updatedCount++
-                    } catch (error: any) {
-                        console.log(chalk.red(`✗ Failed to update ${file.name}: ${error.message}`))
-                    }
-                } else {
-                    console.log(chalk.yellow(`⚠ Template file not found: ${file.src}`))
-                }
-            })
-
-            console.log(chalk.blue(`\nCompleted: Updated ${updatedCount} configuration files`))
-            
-            if (updatedCount > 0) {
-                console.log(chalk.gray('Restart VS Code to apply the new configurations'))
-            }
-
-        } catch (error: any) {
-            console.log(chalk.red('✗ Failed to update workspace:'), error.message)
-        }
-    }
-}
-
 export function analyzeProjectTask(projectPath: string): TaskFunction {
     return () => {
         if (!validateProjectContext(projectPath)) return
@@ -2131,287 +2073,6 @@ export function debugTask(projectPath: string): TaskFunction {
     }
 }
 
-export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
-    return async () => {
-        console.clear()
-        console.log(chalk.cyan.bold('Update Bedrock Workspace'))
-        console.log(chalk.gray('─'.repeat(50)))
-
-        try {
-            console.log(chalk.blue('Checking for workspace updates...'))
-            
-            let repoUrl = 'https://github.com/ackinari/VSCode-Workspace'
-            console.log(chalk.gray(`Repository: ${repoUrl}`))
-
-            // Create temporary directory for comparison
-            const tempDir = path.join(rootPath, '.temp-workspace-update')
-            if (fs.existsSync(tempDir)) {
-                rimraf.sync(tempDir)
-            }
-
-            console.log(chalk.blue('Downloading latest workspace files...'))
-            
-            try {
-                // Use degit to download the latest version
-                const degit = require('degit')
-                const repoName = repoUrl.replace('https://github.com/', '')
-                const emitter = degit(repoName)
-                await emitter.clone(tempDir)
-            } catch (error: any) {
-                console.log(chalk.red('✗ Failed to download workspace files'))
-                console.log(chalk.gray(`Error: ${error.message}`))
-                return
-            }
-
-            // Compare files and find differences
-            const filesToCompare = [
-                '.prettierrc.json',
-                'just.config.ts',
-                'package.json',
-                'tsconfig.json',
-                '.vscode/build-tasks.ts',
-                '.vscode/tasks.json',
-                '.vscode/settings.json',
-                'projects/template/tsconfig.json',
-                'projects/template/.vscode/tasks.json',
-                'projects/template/.vscode/settings.json'
-            ]
-
-            const allFiles: Array<{
-                file: string
-                status: 'modified' | 'new' | 'missing' | 'up-to-date'
-                currentExists: boolean
-                remoteExists: boolean
-            }> = []
-
-            for (const file of filesToCompare) {
-                const currentPath = path.join(rootPath, file)
-                const remotePath = path.join(tempDir, file)
-                
-                const currentExists = fs.existsSync(currentPath)
-                const remoteExists = fs.existsSync(remotePath)
-
-                if (!currentExists && remoteExists) {
-                    allFiles.push({
-                        file,
-                        status: 'new',
-                        currentExists: false,
-                        remoteExists: true
-                    })
-                } else if (currentExists && !remoteExists) {
-                    allFiles.push({
-                        file,
-                        status: 'missing',
-                        currentExists: true,
-                        remoteExists: false
-                    })
-                } else if (currentExists && remoteExists) {
-                    // Compare file contents with normalization
-                    let currentContent = fs.readFileSync(currentPath, 'utf8')
-                    let remoteContent = fs.readFileSync(remotePath, 'utf8')
-                    
-                    // Normalize line endings and whitespace for comparison
-                    const normalizeContent = (content: string): string => {
-                        return content
-                            .replace(/\r\n/g, '\n')  // Convert CRLF to LF
-                            .replace(/\r/g, '\n')    // Convert CR to LF
-                            .replace(/\s+$/gm, '')   // Remove trailing whitespace from each line
-                            .replace(/\n+$/, '\n')   // Normalize ending newlines
-                    }
-                    
-                    const normalizedCurrent = normalizeContent(currentContent)
-                    const normalizedRemote = normalizeContent(remoteContent)
-                    
-                    if (normalizedCurrent !== normalizedRemote) {
-                        allFiles.push({
-                            file,
-                            status: 'modified',
-                            currentExists: true,
-                            remoteExists: true
-                        })
-                    } else {
-                        allFiles.push({
-                            file,
-                            status: 'up-to-date',
-                            currentExists: true,
-                            remoteExists: true
-                        })
-                    }
-                } else {
-                    // Both files don't exist - still show in list
-                    allFiles.push({
-                        file,
-                        status: 'missing',
-                        currentExists: false,
-                        remoteExists: false
-                    })
-                }
-            }
-
-            // Clean up temp directory
-            rimraf.sync(tempDir)
-
-            // Count different files for summary
-            const differentFiles = allFiles.filter(f => f.status !== 'up-to-date')
-            
-            if (differentFiles.length === 0) {
-                console.log(chalk.green('✓ Workspace is up to date!'))
-                console.log(chalk.gray('All files are current, but you can still force update if needed'))
-            } else {
-                console.log(chalk.yellow(`Found ${differentFiles.length} file(s) with differences`))
-            }
-
-            // Create choices for file selection - show ALL files
-            const fileChoices = allFiles.map(file => {
-                const statusColor = file.status === 'new' ? chalk.green : 
-                                  file.status === 'missing' ? chalk.red : 
-                                  file.status === 'modified' ? chalk.yellow :
-                                  chalk.gray
-                const statusText = file.status === 'new' ? 'NEW' : 
-                                 file.status === 'missing' ? 'REMOVED' : 
-                                 file.status === 'modified' ? 'MODIFIED' :
-                                 'UP-TO-DATE'
-                
-                return {
-                    name: `${file.file} ${statusColor(`[${statusText}]`)}`,
-                    value: file.file,
-                    checked: file.status !== 'up-to-date' // Check only files that are different
-                }
-            })
-
-            const { selectedFiles } = await inquirer.prompt([
-                {
-                    type: 'checkbox',
-                    name: 'selectedFiles',
-                    message: 'Select files to update (use space to select, "a" to toggle all):',
-                    choices: fileChoices
-                }
-            ])
-
-            if (selectedFiles.length === 0) {
-                console.log(chalk.gray('No files selected for update'))
-                return
-            }
-
-            // Ask for confirmation to proceed
-            const { proceedWithUpdate } = await inquirer.prompt([
-                {
-                    type: 'confirm',
-                    name: 'proceedWithUpdate',
-                    message: `Update ${selectedFiles.length} selected file(s)?`,
-                    default: true
-                }
-            ])
-
-            if (!proceedWithUpdate) {
-                console.log(chalk.gray('Update cancelled'))
-                return
-            }
-
-            // Show what will be updated vs kept
-            const filesToUpdate = selectedFiles
-            const filesToKeep = differentFiles
-                .map(f => f.file)
-                .filter(file => !filesToUpdate.includes(file))
-
-            if (filesToUpdate.length > 0) {
-                console.log(chalk.green(`\nFiles to be updated (${filesToUpdate.length}):`))
-                filesToUpdate.forEach((file:any) => {
-                    console.log(chalk.green(`  ✓ ${file}`))
-                })
-            }
-
-            if (filesToKeep.length > 0) {
-                console.log(chalk.red(`\nFiles to keep current version (${filesToKeep.length}):`))
-                filesToKeep.forEach(file => {
-                    console.log(chalk.red(`  ✗ ${file}`))
-                })
-            }
-
-            // Download files again for update
-            console.log(chalk.blue('\nDownloading latest files for update...'))
-            if (fs.existsSync(tempDir)) {
-                rimraf.sync(tempDir)
-            }
-
-            try {
-                const degit = require('degit')
-                const repoName = repoUrl.replace('https://github.com/', '')
-                const emitter = degit(repoName)
-                await emitter.clone(tempDir)
-            } catch (error: any) {
-                console.log(chalk.red('✗ Failed to download files for update'))
-                return
-            }
-
-            // Update selected files
-            let updatedCount = 0
-            const errors: string[] = []
-
-            for (const file of filesToUpdate) {
-                try {
-                    const remotePath = path.join(tempDir, file)
-                    const currentPath = path.join(rootPath, file)
-
-                    if (fs.existsSync(remotePath)) {
-                        // Ensure directory exists
-                        const dir = path.dirname(currentPath)
-                        if (!fs.existsSync(dir)) {
-                            fs.mkdirSync(dir, { recursive: true })
-                        }
-
-                        // Copy file
-                        fs.copyFileSync(remotePath, currentPath)
-                        console.log(chalk.green(`  ✓ Updated: ${file}`))
-                        updatedCount++
-                    } else {
-                        // File was removed in remote, ask if should delete local
-                        const { deleteFile } = await inquirer.prompt([
-                            {
-                                type: 'confirm',
-                                name: 'deleteFile',
-                                message: `File "${file}" was removed from repository. Delete local file?`,
-                                default: false
-                            }
-                        ])
-
-                        if (deleteFile && fs.existsSync(currentPath)) {
-                            fs.unlinkSync(currentPath)
-                            console.log(chalk.yellow(`  ✓ Deleted: ${file}`))
-                            updatedCount++
-                        } else {
-                            console.log(chalk.gray(`  - Kept: ${file}`))
-                        }
-                    }
-                } catch (error: any) {
-                    const errorMsg = `Failed to update ${file}: ${error.message}`
-                    console.log(chalk.red(`  ✗ ${errorMsg}`))
-                    errors.push(errorMsg)
-                }
-            }
-
-            // Clean up temp directory
-            rimraf.sync(tempDir)
-
-            console.log('')
-            console.log(chalk.green(`✓ Workspace update completed!`))
-            console.log(chalk.blue(`Updated files: ${updatedCount}`))
-            console.log(chalk.red(`Kept current: ${filesToKeep.length}`))
-
-            if (errors.length > 0) {
-                console.log(chalk.red(`Errors: ${errors.length}`))
-                errors.forEach(error => {
-                    console.log(chalk.red(`  - ${error}`))
-                })
-            }
-
-
-        } catch (error: any) {
-            console.log(chalk.red('✗ Failed to update workspace:'), error.message)
-        }
-    }
-}
-
 export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
     return async () => {
         console.clear()
@@ -2659,6 +2320,335 @@ console.log('${projectName} loaded successfully!');
 
         } catch (error: any) {
             console.log(chalk.red('✗ Failed to import development projects:'), error.message)
+        }
+    }
+}
+
+// update functions
+type FileStatus = 'modified' | 'new' | 'missing' | 'up-to-date'
+
+interface FileComparison {
+    file: string
+    status: FileStatus
+    currentExists: boolean
+    remoteExists: boolean
+}
+
+interface UpdateResult {
+    updatedCount: number
+    errors: string[]
+}
+
+// Utility Functions
+function normalizeContent(content: string): string {
+    return content
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\s+$/gm, '')
+        .replace(/\n+$/, '\n')
+}
+
+function compareFiles(currentPath: string, remotePath: string): FileComparison {
+    const currentExists = fs.existsSync(currentPath)
+    const remoteExists = fs.existsSync(remotePath)
+    const file = path.relative(path.dirname(currentPath), currentPath)
+
+    if (!currentExists && remoteExists) {
+        return { file, status: 'new', currentExists: false, remoteExists: true }
+    }
+    
+    if (currentExists && !remoteExists) {
+        return { file, status: 'missing', currentExists: true, remoteExists: false }
+    }
+    
+    if (currentExists && remoteExists) {
+        const currentContent = normalizeContent(fs.readFileSync(currentPath, 'utf8'))
+        const remoteContent = normalizeContent(fs.readFileSync(remotePath, 'utf8'))
+        
+        const status = currentContent !== remoteContent ? 'modified' : 'up-to-date'
+        return { file, status, currentExists: true, remoteExists: true }
+    }
+
+    return { file, status: 'missing', currentExists: false, remoteExists: false }
+}
+
+function getStatusDisplay(status: FileStatus): { color: any, text: string } {
+    const displays = {
+        'new': { color: chalk.green, text: 'NEW' },
+        'missing': { color: chalk.red, text: 'REMOVED' },
+        'modified': { color: chalk.yellow, text: 'MODIFIED' },
+        'up-to-date': { color: chalk.gray, text: 'UP-TO-DATE' }
+    }
+    return displays[status]
+}
+
+async function selectFilesToUpdate(files: FileComparison[]): Promise<string[]> {
+    const differentFiles = files.filter(f => f.status !== 'up-to-date')
+    
+    if (differentFiles.length === 0) {
+        console.log(chalk.green('✓ All files are up to date!'))
+        console.log(chalk.gray('You can still force update if needed'))
+    } else {
+        console.log(chalk.yellow(`Found ${differentFiles.length} file(s) with differences`))
+    }
+
+    const fileChoices = files.map(file => {
+        const { color, text } = getStatusDisplay(file.status)
+        return {
+            name: `${file.file} ${color(`[${text}]`)}`,
+            value: file.file,
+            checked: file.status !== 'up-to-date'
+        }
+    })
+
+    const { selectedFiles } = await inquirer.prompt([
+        {
+            type: 'checkbox',
+            name: 'selectedFiles',
+            message: 'Select files to update (space to select, "a" to toggle all):',
+            choices: fileChoices
+        }
+    ])
+
+    if (selectedFiles.length === 0) {
+        console.log(chalk.gray('No files selected for update'))
+        return []
+    }
+
+    const { proceedWithUpdate } = await inquirer.prompt([
+        {
+            type: 'confirm',
+            name: 'proceedWithUpdate',
+            message: `Update ${selectedFiles.length} selected file(s)?`,
+            default: true
+        }
+    ])
+
+    return proceedWithUpdate ? selectedFiles : []
+}
+
+function displayUpdateSummary(filesToUpdate: string[], differentFiles: FileComparison[]): void {
+    const filesToKeep = differentFiles
+        .map(f => f.file)
+        .filter(file => !filesToUpdate.includes(file))
+
+    if (filesToUpdate.length > 0) {
+        console.log(chalk.green(`\nFiles to be updated (${filesToUpdate.length}):`))
+        filesToUpdate.forEach(file => console.log(chalk.green(`  ✓ ${file}`)))
+    }
+
+    if (filesToKeep.length > 0) {
+        console.log(chalk.red(`\nFiles to keep current version (${filesToKeep.length}):`))
+        filesToKeep.forEach(file => console.log(chalk.red(`  ✗ ${file}`)))
+    }
+}
+
+async function downloadRepository(repoUrl: string, tempDir: string): Promise<void> {
+    if (fs.existsSync(tempDir)) {
+        rimraf.sync(tempDir)
+    }
+
+    const degit = require('degit')
+    const repoName = repoUrl.replace('https://github.com/', '')
+    const emitter = degit(repoName)
+    await emitter.clone(tempDir)
+}
+
+async function updateFiles(
+    filesToUpdate: string[], 
+    sourcePath: string, 
+    targetPath: string,
+    handleMissing: boolean = true
+): Promise<UpdateResult> {
+    let updatedCount = 0
+    const errors: string[] = []
+
+    for (const file of filesToUpdate) {
+        try {
+            const srcPath = path.join(sourcePath, file)
+            const destPath = path.join(targetPath, file)
+
+            if (fs.existsSync(srcPath)) {
+                const dir = path.dirname(destPath)
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, { recursive: true })
+                }
+
+                fs.copyFileSync(srcPath, destPath)
+                console.log(chalk.green(`  ✓ Updated: ${file}`))
+                updatedCount++
+            } else if (handleMissing) {
+                const { deleteFile } = await inquirer.prompt([
+                    {
+                        type: 'confirm',
+                        name: 'deleteFile',
+                        message: `File "${file}" was removed. Delete local file?`,
+                        default: false
+                    }
+                ])
+
+                if (deleteFile && fs.existsSync(destPath)) {
+                    fs.unlinkSync(destPath)
+                    console.log(chalk.yellow(`  ✓ Deleted: ${file}`))
+                    updatedCount++
+                } else {
+                    console.log(chalk.gray(`  - Kept: ${file}`))
+                }
+            }
+        } catch (error: any) {
+            const errorMsg = `Failed to update ${file}: ${error.message}`
+            console.log(chalk.red(`  ✗ ${errorMsg}`))
+            errors.push(errorMsg)
+        }
+    }
+
+    return { updatedCount, errors }
+}
+
+// Main Functions
+export function updateWorkspaceTask(projectPath: string, rootPath: string): TaskFunction {
+    return async () => {
+        if (!validateProjectContext(projectPath)) return
+
+        console.clear()
+        console.log(chalk.cyan.bold('Update Workspace'))
+        console.log(chalk.gray('─'.repeat(50)))
+
+        const templatePath = path.join(rootPath, 'projects', 'template')
+        
+        try {
+            const filesToCompare = [
+                '.vscode/tasks.json',
+                '.vscode/settings.json',
+                'tsconfig.json'
+            ]
+
+            // Compare files
+            const fileComparisons = filesToCompare.map(file => {
+                const srcPath = path.join(templatePath, file)
+                const destPath = path.join(projectPath, file)
+                const comparison = compareFiles(destPath, srcPath)
+                return { ...comparison, file }
+            })
+
+            // Select files to update
+            const selectedFiles = await selectFilesToUpdate(fileComparisons)
+            if (selectedFiles.length === 0) return
+
+            // Display summary
+            const differentFiles = fileComparisons.filter(f => f.status !== 'up-to-date')
+            displayUpdateSummary(selectedFiles, differentFiles)
+
+            // Update files
+            console.log(chalk.blue('\nUpdating files...'))
+            const { updatedCount, errors } = await updateFiles(
+                selectedFiles,
+                templatePath,
+                projectPath,
+                false
+            )
+
+            // Final summary
+            console.log('')
+            console.log(chalk.green('✓ Workspace update completed!'))
+            console.log(chalk.blue(`Updated files: ${updatedCount}`))
+
+            if (errors.length > 0) {
+                console.log(chalk.red(`Errors: ${errors.length}`))
+                errors.forEach(error => console.log(chalk.red(`  - ${error}`)))
+            }
+
+            if (updatedCount > 0) {
+                console.log(chalk.gray('Restart VS Code to apply the new configurations'))
+            }
+
+        } catch (error: any) {
+            console.log(chalk.red('✗ Failed to update workspace:'), error.message)
+        }
+    }
+}
+
+export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
+    return async () => {
+        console.clear()
+        console.log(chalk.cyan.bold('Update Bedrock Workspace'))
+        console.log(chalk.gray('─'.repeat(50)))
+
+        const repoUrl = 'https://github.com/ackinari/VSCode-Workspace'
+        const tempDir = path.join(rootPath, '.temp-workspace-update')
+
+        try {
+            console.log(chalk.blue('Checking for workspace updates...'))
+            console.log(chalk.gray(`Repository: ${repoUrl}`))
+
+            // Download latest version
+            console.log(chalk.blue('Downloading latest workspace files...'))
+            await downloadRepository(repoUrl, tempDir)
+
+            // Compare files
+            const filesToCompare = [
+                '.prettierrc.json',
+                'just.config.ts',
+                'package.json',
+                'tsconfig.json',
+                '.vscode/build-tasks.ts',
+                '.vscode/tasks.json',
+                '.vscode/settings.json',
+                'projects/template/tsconfig.json',
+                'projects/template/.vscode/tasks.json',
+                'projects/template/.vscode/settings.json'
+            ]
+
+            const fileComparisons = filesToCompare.map(file => {
+                const currentPath = path.join(rootPath, file)
+                const remotePath = path.join(tempDir, file)
+                const comparison = compareFiles(currentPath, remotePath)
+                return { ...comparison, file }
+            })
+
+            // Clean up temp directory after comparison
+            rimraf.sync(tempDir)
+
+            // Select files to update
+            const selectedFiles = await selectFilesToUpdate(fileComparisons)
+            if (selectedFiles.length === 0) return
+
+            // Display summary
+            const differentFiles = fileComparisons.filter(f => f.status !== 'up-to-date')
+            displayUpdateSummary(selectedFiles, differentFiles)
+
+            // Download files again for update
+            console.log(chalk.blue('\nDownloading latest files for update...'))
+            await downloadRepository(repoUrl, tempDir)
+
+            // Update files
+            const { updatedCount, errors } = await updateFiles(
+                selectedFiles,
+                tempDir,
+                rootPath,
+                true
+            )
+
+            // Clean up
+            rimraf.sync(tempDir)
+
+            // Final summary
+            const filesToKeep = differentFiles.filter(f => !selectedFiles.includes(f.file))
+            console.log('')
+            console.log(chalk.green('✓ Workspace update completed!'))
+            console.log(chalk.blue(`Updated files: ${updatedCount}`))
+            console.log(chalk.red(`Kept current: ${filesToKeep.length}`))
+
+            if (errors.length > 0) {
+                console.log(chalk.red(`Errors: ${errors.length}`))
+                errors.forEach(error => console.log(chalk.red(`  - ${error}`)))
+            }
+
+        } catch (error: any) {
+            console.log(chalk.red('✗ Failed to update workspace:'), error.message)
+            if (fs.existsSync(tempDir)) {
+                rimraf.sync(tempDir)
+            }
         }
     }
 }
