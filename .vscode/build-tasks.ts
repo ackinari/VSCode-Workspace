@@ -645,68 +645,65 @@ export function watchTask(globs: string[], taskFunction: TaskFunction): TaskFunc
     }
 }
 
+
 export function mcaddonTask(params: McAddonTaskParams): TaskFunction {
-    return () => {
-        const behaviorPackPath = params.copyToBehaviorPacks![0]
-        const projectDir = path.dirname(behaviorPackPath)
+    return async () => {
+        const behaviorPackPath = params.copyToBehaviorPacks?.[0]
+        const resourcePackPath = params.copyToResourcePacks?.[0]
+
+        const projectDir = behaviorPackPath
+            ? path.dirname(behaviorPackPath)
+            : resourcePackPath
+                ? path.dirname(resourcePackPath)
+                : process.cwd()
+
         const projectName = path.basename(projectDir)
-        
-        // Use outputFile parameter if provided, otherwise create in project's dist folder
+
+        // Definir local de saída
         let mcaddonFile: string
         if (params.outputFile) {
             mcaddonFile = params.outputFile
-            // Ensure the directory exists
             const mcaddonDir = path.dirname(mcaddonFile)
             if (!fs.existsSync(mcaddonDir)) {
                 fs.mkdirSync(mcaddonDir, { recursive: true })
             }
         } else {
-            // Fallback: create in project's dist folder
             const distDir = path.join(projectDir, 'dist')
             if (!fs.existsSync(distDir)) {
                 fs.mkdirSync(distDir, { recursive: true })
             }
             mcaddonFile = path.join(distDir, `${projectName}.mcaddon`)
         }
-        
-        console.log(`Creating .mcaddon package: ${mcaddonFile}`)
-        
+
+        // Checar existência dos diretórios
+        const hasBehaviorPack = behaviorPackPath && fs.existsSync(behaviorPackPath)
+        const hasResourcePack = resourcePackPath && fs.existsSync(resourcePackPath)
+
+        if (!hasBehaviorPack && !hasResourcePack) {
+            console.warn(`[mcaddonTask] Nenhum behavior/resource pack encontrado em ${projectDir}, ignorando criação do .mcaddon.`)
+            return Promise.resolve()
+        }
+
+        console.log(`Criando pacote .mcaddon: ${mcaddonFile}`)
+
         try {
             const zip = new zip_lib.Zip()
-            
-            // Add behavior pack
-            if (params.copyToBehaviorPacks && params.copyToBehaviorPacks.length > 0) {
-                const behaviorPackPath = params.copyToBehaviorPacks[0]
-                if (fs.existsSync(behaviorPackPath)) {
-                    console.log(`Adding behavior pack: ${behaviorPackPath}`)
-                    zip.addFolder(behaviorPackPath, `${projectName}_BP`)
-                }
+
+            if (hasBehaviorPack) {
+                console.log(`Adicionando behavior pack: ${behaviorPackPath}`)
+                zip.addFolder(behaviorPackPath!, `${projectName}_BP`)
             }
-            
-            // Add resource pack
-            if (params.copyToResourcePacks && params.copyToResourcePacks.length > 0) {
-                const resourcePackPath = params.copyToResourcePacks[0]
-                if (fs.existsSync(resourcePackPath)) {
-                    console.log(`Adding resource pack: ${resourcePackPath}`)
-                    zip.addFolder(resourcePackPath, `${projectName}_RP`)
-                }
+
+            if (hasResourcePack) {
+                console.log(`Adicionando resource pack: ${resourcePackPath}`)
+                zip.addFolder(resourcePackPath!, `${projectName}_RP`)
             }
-            
-            // Create the archive
-            return zip.archive(mcaddonFile).then(
-                () => {
-                    console.log(`[SUCCESS] McAddon package created: ${mcaddonFile}`)
-                    return Promise.resolve()
-                },
-                (error: any) => {
-                    console.error(`[ERROR] Failed to create McAddon package: ${error}`)
-                    return Promise.reject(new Error(`Failed to create McAddon package: ${error}`))
-                }
-            )
-            
+
+            await zip.archive(mcaddonFile)
+            console.log(`[SUCCESS] McAddon criado com sucesso: ${mcaddonFile}`)
         } catch (error: any) {
-            console.error(`[ERROR] McAddon task failed: ${error.message}`)
-            return Promise.reject(error)
+            console.error(`[ERROR] Falha ao criar McAddon: ${error.message}`)
+            throw error
         }
     }
 }
