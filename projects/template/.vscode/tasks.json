@@ -127,6 +127,18 @@
             "detail": "Watch files and auto-deploy changes"
         },
         {
+            "label": "Bun Watch",
+            "type": "shell",
+            "command": "bun",
+            "args": ["build", "./tscripts/main.ts", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/*", "--watch"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "detail": "Watch files and auto-deploy changes using bun"
+        },
+        {
             "label": "Lint",
             "type": "shell",
             "command": "npm",
@@ -182,6 +194,7 @@
             "args": ["run", "update-version"],
             "group": "build",
             "presentation": {
+                "showReuseMessage": false,
                 "focus": true,
             },
             "detail": "Update project version in manifests"
