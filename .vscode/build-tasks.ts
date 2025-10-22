@@ -555,9 +555,18 @@ export function copyTask(params: CopyTaskParams, projectName: string): TaskFunct
         if (deploymentPath === undefined) {
             throw new Error('Deployment path is undefined. Make sure to configure package root correctly.')
         }
-        params.copyToBehaviorPacks && copyFiles(params.copyToBehaviorPacks, path.join(deploymentPath, BehaviorPacksPath, projectName + '_BP'))
-        params.copyToScripts && copyFiles(params.copyToScripts, path.join(deploymentPath, BehaviorPacksPath, projectName + '_BP', 'scripts'))
-        params.copyToResourcePacks && copyFiles(params.copyToResourcePacks, path.join(deploymentPath, ResourcePacksPath, projectName + '_RP'))
+
+        const safeCopy = (sourcePaths: string[] | undefined, destPath: string) => {
+            if (!sourcePaths) return
+            for (const sourcePath of sourcePaths) {
+                if (!fs.existsSync(sourcePath)) return
+                copyFiles([sourcePath], destPath)
+            }
+        }
+
+        safeCopy(params.copyToBehaviorPacks, path.join(deploymentPath, BehaviorPacksPath, projectName + '_BP'))
+        safeCopy(params.copyToScripts, path.join(deploymentPath, BehaviorPacksPath, projectName + '_BP', 'scripts')) //! not used for now
+        safeCopy(params.copyToResourcePacks, path.join(deploymentPath, ResourcePacksPath, projectName + '_RP'))
     }
 }
 
