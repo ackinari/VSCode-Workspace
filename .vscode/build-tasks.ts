@@ -1373,7 +1373,7 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
         const projectBehaviorPath = path.join(projectPath, 'behavior_pack')
         const projectResourcePath = path.join(projectPath, 'resource_pack')
         
-        const deploymentPath = getGameDeploymentRootPaths().PreviewGDK
+        const deploymentPath = getGameDeploymentRootPaths().BedrockGDK
         if (deploymentPath === undefined) {
             throw new Error('Deployment path is undefined. Make sure you have the right minecraft version installed (Minecraft GDK).')
         }
