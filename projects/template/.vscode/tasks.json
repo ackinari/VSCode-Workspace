@@ -195,6 +195,7 @@
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
+                "clear": true,
                 "focus": true,
             },
             "detail": "Update project version in manifests"
@@ -220,6 +221,7 @@
             "presentation": {
                 "showReuseMessage": false,
                 "clear": true,
+                "focus": true,
             },
             "detail": "Update workspace configurations from template"
         },
