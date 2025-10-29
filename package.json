@@ -27,7 +27,9 @@
         "@minecraft/math": "^2.2.7",
         "@minecraft/server": "^2.0.0",
         "@minecraft/server-ui": "^2.0.0",
-        "@minecraft/vanilla-data": "^1.21.90"
+        "@minecraft/vanilla-data": "^1.21.90",
+        "json-schema-to-typescript": "^15.0.4",
+        "jsonc": "^2.0.0"
     },
     "scripts": {
         "debug": "cross-env \"REAL_CWD=%CD%\" just-scripts debug",
