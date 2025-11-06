@@ -130,7 +130,8 @@
             "label": "Bun Watch",
             "type": "shell",
             "command": "bun",
-            "args": ["build", "./tscripts/main.ts", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/*", "--watch"],
+            "args": ["build", "./tscripts/main.ts", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/server", "--external", "@minecraft/server-ui", "--external", "@minecraft/debug-utilities", "--watch"],
+            // "args": ["build", "./tscripts/main.ts", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/*", "--watch"],
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -283,6 +284,7 @@
             "presentation": {
                 "showReuseMessage": false,
                 "clear": true,
+                "focus": true
             },
             "detail": "Create a windows Symlink at local Minecraft folder"
         }
