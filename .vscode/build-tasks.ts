@@ -1365,7 +1365,7 @@ export function backupProjectTask(projectPath: string, rootPath: string): TaskFu
 
 
 export function createSymlink(projectPath: string, projectName: string): TaskFunction {
-    return () => {
+    return async () => {
         if (!validateProjectContext(projectPath)) return
 
         console.log(chalk.yellow('Creating new Symlink for project...'))
@@ -1373,7 +1373,19 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
         const projectBehaviorPath = path.join(projectPath, 'behavior_pack')
         const projectResourcePath = path.join(projectPath, 'resource_pack')
         
-        const deploymentPath = getGameDeploymentRootPaths().BedrockGDK
+        
+        const deploymentChoices = ['PreviewGDK', 'BedrockGDK']
+        const answers = await inquirer.prompt([
+            {
+                type: 'list',
+                name: 'minecraftVersion',
+                message: 'Select minecraft version:',
+                choices: deploymentChoices
+            }
+        ])
+        
+        const deploymentPath = getGameDeploymentRootPaths()[answers.minecraftVersion as keyof GameDeploymentRootPaths]
+
         if (deploymentPath === undefined) {
             throw new Error('Deployment path is undefined. Make sure you have the right minecraft version installed (Minecraft GDK).')
         }
