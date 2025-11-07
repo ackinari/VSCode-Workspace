@@ -130,7 +130,7 @@
             "label": "Bun Watch",
             "type": "shell",
             "command": "bun",
-            "args": ["build", "./tscripts/main.ts", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/server", "--external", "@minecraft/server-ui", "--external", "@minecraft/debug-utilities", "--watch"],
+            "args": ["build", "./tscripts/main.ts", "./tscripts/main.js", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/server", "--external", "@minecraft/server-ui", "--external", "@minecraft/debug-utilities", "--external", "@minecraft/server-gametest", "--watch"],
             // "args": ["build", "./tscripts/main.ts", "--outdir", "./behavior_pack/scripts", "--external", "@minecraft/*", "--watch"],
             "group": "build",
             "presentation": {
