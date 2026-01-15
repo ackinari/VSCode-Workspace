@@ -97,6 +97,6 @@ To Run any task, open the VSCode Command Palette `ctrl+shift+P` or simply press 
 # Notes:
 The project was made with the help of `ClaudeAI Sonnet 4.5`.
 
-Functions were token from [@minecraft/core-build-tasks](https://www.npmjs.com/package/@minecraft/core-build-tasks) and modified to work with the this workspace system.
+Functions were token from [@minecraft/core-build-tasks](https://www.npmjs.com/package/@minecraft/core-build-tasks) and modified to work with this workspace system.
 
 Feel free to use and modify it however you want.
