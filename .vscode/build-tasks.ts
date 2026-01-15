@@ -526,7 +526,7 @@ function copyFiles(originPaths: string[], outputPath: string, skipIfPossible: bo
     }
 }
 
-type GameDeploymentRootPaths = {BedrockGDK?: string, PreviewGDK?: string, BedrockUWP?: string, PreviewUWP?: string, Custom?: string}
+type GameDeploymentRootPaths = {BedrockGDK?: string, PreviewGDK?: string, BedrockUWP?: string, PreviewUWP?: string, EducationUWP?: string, Custom?: string}
 function getGameDeploymentRootPaths(): GameDeploymentRootPaths {
     const localAppDataPath = process.env['LOCALAPPDATA']
     const appDataPath = process.env['APPDATA']
@@ -536,6 +536,7 @@ function getGameDeploymentRootPaths(): GameDeploymentRootPaths {
         PreviewGDK: appDataPath ? path.resolve(appDataPath, 'Minecraft Bedrock Preview/Users/Shared/games/com.mojang/') : undefined,
         BedrockUWP: localAppDataPath ? path.resolve(localAppDataPath, 'Packages/Microsoft.MinecraftUWP_8wekyb3d8bbwe/LocalState/games/com.mojang/') : undefined,
         PreviewUWP: localAppDataPath ? path.resolve(localAppDataPath, 'Packages/Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe/LocalState/games/com.mojang/') : undefined,
+        EducationUWP: localAppDataPath ? path.resolve(localAppDataPath, 'Packages/Microsoft.MinecraftEducationEdition_8wekyb3d8bbwe/LocalState/games/com.mojang/') : undefined,
         Custom: customDeploymentPath || undefined,
     }
 }
