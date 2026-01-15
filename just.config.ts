@@ -117,8 +117,8 @@ const TASK_LIST: Record<string, Function> = {
 
     'mcaddon': () => conditionalTypeScriptTask(
         config.paths.project,
-        series('clean-local', 'typescript', 'build', 'createMcaddonFile'),
-        series('build', 'createMcaddonFile')
+        series('createMcaddonFile'),
+        series('createMcaddonFile')
     ),
 
     // project management
