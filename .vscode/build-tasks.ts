@@ -1389,15 +1389,12 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
                 const findPartInternalFile = hasPartInternalFile.find(bpFile => {
                     const join = path.join(bpFile.parentPath, bpFile.name)
                     const files = fs.readdirSync(join, { withFileTypes: true })
-                    console.log(files)
                     return files.some(f => f.name == "manifest.json")
                 })
                 if (findPartInternalFile) {
-                    console.log(findPartInternalFile.name)
                     return path.join(findPartInternalFile.parentPath, findPartInternalFile.name)
                 }
                 else {
-                    console.log('normal path')
                     return partFolder
                 }
             }
