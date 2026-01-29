@@ -7,6 +7,7 @@ import * as just_scripts from 'just-scripts'
 import * as path from 'path'
 import * as rimraf from 'rimraf'
 import * as zip_lib from 'zip-lib'
+import { config } from '../just.config'
 
 const chalk = require('chalk')
 const inquirer = require('inquirer')
@@ -1369,59 +1370,10 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
         //vê se a pasta existe e se está dentro de projects
         if (!validateProjectContext(projectPath)) return
 
-        function _partsFind(part: string, cases: string[]) {
-            for (const folderCase of cases) {
-                const join = path.join(projectPath, folderCase)
-                if (fs.existsSync(join)) {
-                    return join
-                }
-            }
-            console.error(chalk.red(`ERROR: ${part} folder not found.`))
-            process.exitCode = 1
-            return
-        }
-
-        function _projectFolder(partFolder: string) {
-            const hasPartInternalFile = fs.readdirSync(partFolder, { withFileTypes: true })
-            if (hasPartInternalFile.some(p => p.name == "manifest.json")) {
-                return partFolder
-            } else {
-                const findPartInternalFile = hasPartInternalFile.find(bpFile => {
-                    const join = path.join(bpFile.parentPath, bpFile.name)
-                    const files = fs.readdirSync(join, { withFileTypes: true })
-                    return files.some(f => f.name == "manifest.json")
-                })
-                if (findPartInternalFile) {
-                    return path.join(findPartInternalFile.parentPath, findPartInternalFile.name)
-                }
-                else {
-                    return partFolder
-                }
-            }
-        }
-
-        function _findBehavior() {
-            const bpFolder = _partsFind('BEHAVIOR PACK', ['behavior_pack', 'BP', 'BPS', 'behavior_packs'])
-            if (bpFolder) {
-                const projectFolder = _projectFolder(bpFolder)
-                return projectFolder
-            }
-            return
-        }
-
-        function _findResource() {
-            const bpFolder = _partsFind('RESOURCE PACK', ['resource_pack', 'RP', 'RPS', 'resource_packs'])
-            if (bpFolder) {
-                const projectFolder = _projectFolder(bpFolder)
-                return projectFolder
-            }
-            return
-        }
-
         console.log(chalk.yellow('Creating new Symlink for project...'))
 
-        let projectBehaviorPath = _findBehavior()
-        let projectResourcePath = _findResource()
+        let projectBehaviorPath = config.paths.behaviorPack
+        let projectResourcePath = config.paths.resourcePack
 
         const deploymentChoices = ['BedrockGDK', 'PreviewGDK']
         const answers = await inquirer.prompt([
