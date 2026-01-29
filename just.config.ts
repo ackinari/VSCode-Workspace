@@ -1,5 +1,8 @@
 import { parallel, series, task, tscTask, TscTaskOptions } from 'just-scripts'
 import path from 'path'
+import * as fs from 'fs'
+
+const chalk = require('chalk')
 
 import {
     analyzeProjectTask,
@@ -41,14 +44,63 @@ const ENV = {
 
 const BASE_PROJECT_DIR =
     ENV.INIT_CWD?.includes('projects') ? ENV.INIT_CWD :
-    ENV.REAL_CWD?.includes('projects') ? ENV.REAL_CWD :
-    ENV.CWD?.includes('projects') && ENV.CWD !== ROOT ? ENV.CWD :
-    ENV.CWD
+        ENV.REAL_CWD?.includes('projects') ? ENV.REAL_CWD :
+            ENV.CWD?.includes('projects') && ENV.CWD !== ROOT ? ENV.CWD :
+                ENV.CWD
 
 const PROJECT_NAME = path.basename(BASE_PROJECT_DIR)
 
 const joinRoot = (...args: string[]) => path.resolve(ROOT, ...args)
 const joinProject = (...args: string[]) => path.resolve(ROOT, 'projects', PROJECT_NAME, ...args)
+
+function _partsFind(projectPath: string, part: string, cases: string[]) {
+    for (const folderCase of cases) {
+        const join = path.join(projectPath, folderCase)
+        if (fs.existsSync(join)) {
+            return join
+        }
+    }
+    console.error(chalk.red(`ERROR: ${part} folder not found.`))
+    process.exitCode = 1
+    return
+}
+
+function _projectFolder(partFolder: string) {
+    const hasPartInternalFile = fs.readdirSync(partFolder, { withFileTypes: true })
+    if (hasPartInternalFile.some(p => p.name == "manifest.json")) {
+        return partFolder
+    } else {
+        const findPartInternalFile = hasPartInternalFile.find(bpFile => {
+            const join = path.join(bpFile.parentPath, bpFile.name)
+            const files = fs.readdirSync(join, { withFileTypes: true })
+            return files.some(f => f.name == "manifest.json")
+        })
+        if (findPartInternalFile) {
+            return path.join(findPartInternalFile.parentPath, findPartInternalFile.name)
+        }
+        else {
+            return partFolder
+        }
+    }
+}
+
+function _findBehavior(projectPath: string) {
+    const bpFolder = _partsFind(projectPath, 'BEHAVIOR PACK', ['behavior_pack', 'BP', 'BPS', 'behavior_packs'])
+    if (bpFolder) {
+        const projectFolder = _projectFolder(bpFolder)
+        return projectFolder
+    }
+    return projectPath
+}
+
+function _findResource(projectPath: string) {
+    const bpFolder = _partsFind(projectPath, 'RESOURCE PACK', ['resource_pack', 'RP', 'RPS', 'resource_packs'])
+    if (bpFolder) {
+        const projectFolder = _projectFolder(bpFolder)
+        return projectFolder
+    }
+    return projectPath
+}
 
 export const config = {
     env: ENV,
@@ -60,8 +112,8 @@ export const config = {
         dist: joinProject('dist'),
         tsEntry: joinProject('tscripts', 'main.ts'),
         jsOut: joinProject('dist', 'scripts', 'main.js'),
-        behaviorPack: joinProject('behavior_pack'),
-        resourcePack: joinProject('resource_pack'),
+        behaviorPack: _findBehavior(joinProject()),
+        resourcePack: _findResource(joinProject()),
         packageFile: joinProject('dist', `${PROJECT_NAME}.mcaddon`),
     },
 }
