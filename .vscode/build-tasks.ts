@@ -1367,15 +1367,58 @@ export function backupProjectTask(projectPath: string, rootPath: string): TaskFu
 
 export function createSymlink(projectPath: string, projectName: string): TaskFunction {
     return async () => {
+        //vê se a pasta existe e se está dentro de projects
         if (!validateProjectContext(projectPath)) return
+
+        function _partsFind(part: string, cases: string[]) {
+            for (const folderCase of cases) {
+                const join = path.join(projectPath, folderCase)
+                if (fs.existsSync(join)) {
+                    return join
+                }
+            }
+            console.error(chalk.red(`ERROR: ${part} folder not found.`))
+            process.exitCode = 1
+            return
+        }
+
+        function _projectFolder(partFolder: string, partCases: string[]) {
+            for (const partCase of partCases) {
+                const startCase = path.join(partFolder, `${partCase}${projectName}`)
+                const endCase = path.join(partFolder, `${projectName}${partCase}`)
+                const startCaseTest = fs.existsSync(startCase)
+                const endCaseTest = fs.existsSync(endCase)
+                if (endCaseTest) {
+                    return endCase
+                } else if (startCaseTest) {
+                    return startCase
+                }
+            }
+            return
+        }
+
+        function _findBehavior() {
+            const bpFolder = _partsFind('BEHAVIOR PACK', ['behavior_pack', 'BP', 'BPS', 'behavior_packs'])
+            if (bpFolder) {
+                return _projectFolder(bpFolder, ['_bp', '_BP', 'BP', 'BP ', ' BP', 'bp_', 'BP_'])
+            }
+            return
+        }
+
+        function _findResource() {
+            const bpFolder = _partsFind('RESOURCE PACK', ['resource_pack', 'RP', 'RPS', 'resource_packs'])
+            if (bpFolder) {
+                return _projectFolder(bpFolder, ['_rp', '_rP', 'RP', 'RP ', ' RP', 'rp_', 'RP_'])
+            }
+            return
+        }
 
         console.log(chalk.yellow('Creating new Symlink for project...'))
 
-        const projectBehaviorPath = path.join(projectPath, 'behavior_pack')
-        const projectResourcePath = path.join(projectPath, 'resource_pack')
-        
-        
-        const deploymentChoices = ['PreviewGDK', 'BedrockGDK']
+        let projectBehaviorPath = _findBehavior()
+        let projectResourcePath = _findResource()
+
+        const deploymentChoices = ['BedrockGDK', 'PreviewGDK']
         const answers = await inquirer.prompt([
             {
                 type: 'list',
@@ -1384,7 +1427,7 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
                 choices: deploymentChoices
             }
         ])
-        
+
         const deploymentPath = getGameDeploymentRootPaths()[answers.minecraftVersion as keyof GameDeploymentRootPaths]
 
         if (deploymentPath === undefined) {
