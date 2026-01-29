@@ -90,7 +90,7 @@ function _findBehavior(projectPath: string) {
         const projectFolder = _projectFolder(bpFolder)
         return projectFolder
     }
-    return
+    return projectPath
 }
 
 function _findResource(projectPath: string) {
@@ -99,7 +99,7 @@ function _findResource(projectPath: string) {
         const projectFolder = _projectFolder(bpFolder)
         return projectFolder
     }
-    return
+    return projectPath
 }
 
 export const config = {
