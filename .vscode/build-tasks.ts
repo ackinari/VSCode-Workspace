@@ -1364,7 +1364,6 @@ export function backupProjectTask(projectPath: string, rootPath: string): TaskFu
     }
 }
 
-
 export function createSymlink(projectPath: string, projectName: string): TaskFunction {
     return async () => {
         //vê se a pasta existe e se está dentro de projects
@@ -1382,25 +1381,33 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
             return
         }
 
-        function _projectFolder(partFolder: string, partCases: string[]) {
-            for (const partCase of partCases) {
-                const startCase = path.join(partFolder, `${partCase}${projectName}`)
-                const endCase = path.join(partFolder, `${projectName}${partCase}`)
-                const startCaseTest = fs.existsSync(startCase)
-                const endCaseTest = fs.existsSync(endCase)
-                if (endCaseTest) {
-                    return endCase
-                } else if (startCaseTest) {
-                    return startCase
+        function _projectFolder(partFolder: string) {
+            const hasPartInternalFile = fs.readdirSync(partFolder, { withFileTypes: true })
+            if (hasPartInternalFile.some(p => p.name == "manifest.json")) {
+                return partFolder
+            } else {
+                const findPartInternalFile = hasPartInternalFile.find(bpFile => {
+                    const join = path.join(bpFile.parentPath, bpFile.name)
+                    const files = fs.readdirSync(join, { withFileTypes: true })
+                    console.log(files)
+                    return files.some(f => f.name == "manifest.json")
+                })
+                if (findPartInternalFile) {
+                    console.log(findPartInternalFile.name)
+                    return path.join(findPartInternalFile.parentPath, findPartInternalFile.name)
+                }
+                else {
+                    console.log('normal path')
+                    return partFolder
                 }
             }
-            return
         }
 
         function _findBehavior() {
             const bpFolder = _partsFind('BEHAVIOR PACK', ['behavior_pack', 'BP', 'BPS', 'behavior_packs'])
             if (bpFolder) {
-                return _projectFolder(bpFolder, ['_bp', '_BP', 'BP', 'BP ', ' BP', 'bp_', 'BP_'])
+                const projectFolder = _projectFolder(bpFolder)
+                return projectFolder
             }
             return
         }
@@ -1408,7 +1415,8 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
         function _findResource() {
             const bpFolder = _partsFind('RESOURCE PACK', ['resource_pack', 'RP', 'RPS', 'resource_packs'])
             if (bpFolder) {
-                return _projectFolder(bpFolder, ['_rp', '_rP', 'RP', 'RP ', ' RP', 'rp_', 'RP_'])
+                const projectFolder = _projectFolder(bpFolder)
+                return projectFolder
             }
             return
         }
