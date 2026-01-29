@@ -16,3 +16,8 @@ bun.lock
 backups/*
 projects/*
 !projects/template/
+
+# ignore projects !template
+projects/*
+!projects/template/
+!projects/template/**
