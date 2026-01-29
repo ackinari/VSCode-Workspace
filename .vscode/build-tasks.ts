@@ -10,7 +10,7 @@ import * as zip_lib from 'zip-lib'
 import { config } from '../just.config'
 
 const chalk = require('chalk')
-const inquirer = require('inquirer')
+import inquirer from 'inquirer'
 
 // ===== TYPES AND INTERFACES =====
 
@@ -407,9 +407,16 @@ function runPrettier(filePaths: string[], workspaceRoot?: string): boolean {
 /**
  * Opens a project in VS Code
  */
-function openInVSCode(projectPath: string): void {
+async function openInVSCode(projectPath: string): void {
     console.log(chalk.yellow('Opening VS Code...'))
-    child_process.exec(`code -r "${projectPath}"`, (err) => {
+    const answers = await inquirer.prompt({
+        name: 'openNewWindow',
+        message: 'Open new Vs Code Window?',
+        type: 'confirm',
+        default: '',
+    })
+    const openNewWindowResult = answers.openNewWindow
+    child_process.exec(`code ${openNewWindowResult ? '' : '-r'} "${projectPath}"`, (err) => {
         if (err) {
             console.log(chalk.red('Failed to open VS Code automatically.'))
             console.log(chalk.gray('Make sure the "code" command is installed in PATH.'))
