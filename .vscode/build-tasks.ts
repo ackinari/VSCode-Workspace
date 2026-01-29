@@ -407,7 +407,7 @@ function runPrettier(filePaths: string[], workspaceRoot?: string): boolean {
 /**
  * Opens a project in VS Code
  */
-async function openInVSCode(projectPath: string): void {
+async function openInVSCode(projectPath: string): Promise<void> {
     console.log(chalk.yellow('Opening VS Code...'))
     const answers = await inquirer.prompt({
         name: 'openNewWindow',
