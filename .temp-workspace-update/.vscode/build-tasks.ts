@@ -3,21 +3,15 @@ import * as child_process from 'child_process'
 import * as crypto from 'crypto'
 import * as dotenv from 'dotenv'
 import * as fs from 'fs'
-import inquirer from 'inquirer'
 import * as just_scripts from 'just-scripts'
 import * as path from 'path'
 import * as rimraf from 'rimraf'
 import * as zip_lib from 'zip-lib'
-import { config } from '../just.config'
 
 const chalk = require('chalk')
+const inquirer = require('inquirer')
 
 // ===== TYPES AND INTERFACES =====
-
-interface World {
-    path: string,
-    worldName: string
-}
 
 interface ProjectManifest {
     format_version: number
@@ -270,13 +264,13 @@ function updateProjectDescription(projectPath: string, newDescription: string): 
 function deleteDeployedProject(projectName: string): void {
     const paths = getGameDeploymentRootPaths()
     let deletedCount = 0
-
+    
     Object.entries(paths).forEach(([product, deployPath]) => {
         if (!deployPath || !fs.existsSync(deployPath)) return
-
+        
         const behaviorDeployPath = path.join(deployPath, BehaviorPacksPath, `${projectName}_BP`)
         const resourceDeployPath = path.join(deployPath, ResourcePacksPath, `${projectName}_RP`)
-
+        
         if (fs.existsSync(behaviorDeployPath)) {
             try {
                 rimraf.sync(behaviorDeployPath)
@@ -286,7 +280,7 @@ function deleteDeployedProject(projectName: string): void {
                 console.log(chalk.red(`✗ Failed to delete behavior pack from ${product}`))
             }
         }
-
+        
         if (fs.existsSync(resourceDeployPath)) {
             try {
                 rimraf.sync(resourceDeployPath)
@@ -297,7 +291,7 @@ function deleteDeployedProject(projectName: string): void {
             }
         }
     })
-
+    
     if (deletedCount === 0) {
         console.log(chalk.gray('No deployed files found to delete'))
     } else {
@@ -307,13 +301,13 @@ function deleteDeployedProject(projectName: string): void {
 /**
  * Gets list of development projects from Minecraft folders
  */
-function getDevelopmentProjects(): Array<{ name: string, path: string, type: 'behavior' | 'resource' }> {
-    const projects: Array<{ name: string, path: string, type: 'behavior' | 'resource' }> = []
+function getDevelopmentProjects(): Array<{name: string, path: string, type: 'behavior' | 'resource'}> {
+    const projects: Array<{name: string, path: string, type: 'behavior' | 'resource'}> = []
     const paths = getGameDeploymentRootPaths()
-
+    
     Object.entries(paths).forEach(([product, rootPath]) => {
         if (!rootPath || !fs.existsSync(rootPath)) return
-
+        
         // Check behavior packs
         const behaviorPath = path.join(rootPath, BehaviorPacksPath)
         if (fs.existsSync(behaviorPath)) {
@@ -329,7 +323,7 @@ function getDevelopmentProjects(): Array<{ name: string, path: string, type: 'be
                 })
             })
         }
-
+        
         // Check resource packs
         const resourcePath = path.join(rootPath, ResourcePacksPath)
         if (fs.existsSync(resourcePath)) {
@@ -346,7 +340,7 @@ function getDevelopmentProjects(): Array<{ name: string, path: string, type: 'be
             })
         }
     })
-
+    
     return projects
 }
 
@@ -395,12 +389,12 @@ function runPrettier(filePaths: string[], workspaceRoot?: string): boolean {
         // Run prettier on all files at once for better performance
         const quotedPaths = filePaths.map(filePath => quotePath(filePath))
         const cmd = `npx prettier --write --config "${prettierConfigPath}" ${quotedPaths.join(' ')}`
-
+        
         child_process.execSync(cmd, {
             stdio: 'ignore', // Suppress prettier output
             cwd: cwd
         })
-
+        
         console.log(chalk.gray('✓ Prettier formatting completed'))
         return true
     } catch (error: any) {
@@ -412,16 +406,9 @@ function runPrettier(filePaths: string[], workspaceRoot?: string): boolean {
 /**
  * Opens a project in VS Code
  */
-async function openInVSCode(projectPath: string): Promise<void> {
+function openInVSCode(projectPath: string): void {
     console.log(chalk.yellow('Opening VS Code...'))
-    const answers = await inquirer.prompt({
-        name: 'openNewWindow',
-        message: 'Open new Vs Code Window?',
-        type: 'confirm',
-        default: '',
-    })
-    const openNewWindowResult = answers.openNewWindow
-    child_process.exec(`code ${openNewWindowResult ? '' : '-r'} "${projectPath}"`, (err) => {
+    child_process.exec(`code -r "${projectPath}"`, (err) => {
         if (err) {
             console.log(chalk.red('Failed to open VS Code automatically.'))
             console.log(chalk.gray('Make sure the "code" command is installed in PATH.'))
@@ -436,7 +423,7 @@ async function openInVSCode(projectPath: string): Promise<void> {
 // ===== EXISTING FUNCTIONS (keeping original functionality) =====
 
 export function setupEnvironment(envPath: string): void {
-    dotenv.config({ path: envPath })
+    dotenv.config({path: envPath})
 }
 
 export function cleanTask(dirs: string[]): TaskFunction {
@@ -445,7 +432,7 @@ export function cleanTask(dirs: string[]): TaskFunction {
             try {
                 console.log(`Cleaning ${path.resolve(process.cwd(), dir)}`)
                 rimraf.sync(path.resolve(process.cwd(), dir))
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 }
@@ -492,7 +479,7 @@ export function cleanCollateralTask(pathsToClean: string[], projectName: string)
                 const stats = fs.statSync(cleanPath)
                 console.log(`Cleaning ${stats.isDirectory() ? 'directory' : 'file'} ${path.resolve(cleanPath)}.`)
                 rimraf.sync(cleanPath)
-            } catch (_) { }
+            } catch (_) {}
         }
     }
 }
@@ -532,14 +519,14 @@ function copyFiles(originPaths: string[], outputPath: string, skipIfPossible: bo
                 continue
             }
             console.log(`Copying file ${inputPath} to ${fileDestinationPath}`)
-            rushstack.FileSystem.copyFiles({ sourcePath: inputPath, destinationPath: fileDestinationPath, preserveTimestamps: true })
+            rushstack.FileSystem.copyFiles({sourcePath: inputPath, destinationPath: fileDestinationPath, preserveTimestamps: true})
             continue
         }
-        rushstack.FileSystem.copyFiles({ sourcePath: inputPath, destinationPath, preserveTimestamps: true })
+        rushstack.FileSystem.copyFiles({sourcePath: inputPath, destinationPath, preserveTimestamps: true})
     }
 }
 
-type GameDeploymentRootPaths = { BedrockGDK?: string, PreviewGDK?: string, BedrockUWP?: string, PreviewUWP?: string, EducationUWP?: string, Custom?: string }
+type GameDeploymentRootPaths = {BedrockGDK?: string, PreviewGDK?: string, BedrockUWP?: string, PreviewUWP?: string, EducationUWP?: string, Custom?: string}
 function getGameDeploymentRootPaths(): GameDeploymentRootPaths {
     const localAppDataPath = process.env['LOCALAPPDATA']
     const appDataPath = process.env['APPDATA']
@@ -554,13 +541,8 @@ function getGameDeploymentRootPaths(): GameDeploymentRootPaths {
     }
 }
 
-// com.mojang
 const BehaviorPacksPath = 'development_behavior_packs'
 const ResourcePacksPath = 'development_resource_packs'
-const worldPath = 'minecraftWorlds'
-// project
-const projectWorldFolderName = 'world'
-const projectDistFolderName = 'dist'
 
 export function copyTask(params: CopyTaskParams, projectName: string): TaskFunction {
     return () => {
@@ -593,14 +575,14 @@ const WATCH_TASK_NAME = 'watch-task'
 just_scripts.option('watch')
 
 function executeTask(taskFunction: TaskFunction): void {
-    void (taskFunction as any).call(undefined, () => { })
+    void (taskFunction as any).call(undefined, () => {})
 }
 
 export function conditionalTypeScriptTask(projectPath: string, typeScriptTask: any, fallbackTask: any): any {
-    return function (this: any) {
+    return function(this: any) {
         const tscriptsPath = path.join(projectPath, 'tscripts')
         const hasTypeScript = fs.existsSync(tscriptsPath)
-
+        
         if (hasTypeScript) {
             console.log(chalk.blue('TypeScript project detected, compiling...'))
             const task = typeScriptTask
@@ -687,7 +669,7 @@ export function mcaddonTask(params: McAddonTaskParams): TaskFunction {
                 fs.mkdirSync(mcaddonDir, { recursive: true })
             }
         } else {
-            const distDir = path.join(projectDir, projectDistFolderName)
+            const distDir = path.join(projectDir, 'dist')
             if (!fs.existsSync(distDir)) {
                 fs.mkdirSync(distDir, { recursive: true })
             }
@@ -735,7 +717,7 @@ function prettierTask(files: string[], fix: boolean): TaskFunction {
         }
         const cmd = ['npx', 'prettier', fix ? '--write' : '--check', ...files].join(' ')
         try {
-            child_process.execSync(cmd, { stdio: 'inherit' })
+            child_process.execSync(cmd, {stdio: 'inherit'})
             return Promise.resolve()
         } catch (error) {
             return Promise.reject(error)
@@ -788,9 +770,9 @@ function validateManifest(manifestPath: string, packType: string): ValidationRes
             })
         }
 
-        return { valid: issues.length === 0, issues, manifest }
+        return {valid: issues.length === 0, issues, manifest}
     } catch (error: any) {
-        return { valid: false, issues: [`Failed to parse JSON: ${error.message}`], manifest: null }
+        return {valid: false, issues: [`Failed to parse JSON: ${error.message}`], manifest: null}
     }
 }
 
@@ -1215,7 +1197,7 @@ export function analyzeProjectTask(projectPath: string): TaskFunction {
                     let newPackType = packType
                     if (item === 'behavior_pack') newPackType = 'behavior'
                     else if (item === 'resource_pack') newPackType = 'resource'
-
+                    
                     analyzeDirectory(fullPath, path.join(relativePath, item), newPackType)
                 } else {
                     stats.totalFiles++
@@ -1281,7 +1263,7 @@ export function analyzeProjectTask(projectPath: string): TaskFunction {
             try {
                 const manifest: ProjectManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
                 const projectName = getProjectDisplayName(projectPath, manifest)
-
+                
                 console.log('')
                 console.log(chalk.yellow('Behavior Pack Info'))
                 console.log(`Name: ${projectName}`)
@@ -1295,7 +1277,7 @@ export function analyzeProjectTask(projectPath: string): TaskFunction {
                     try {
                         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
                         const deps = packageJson.dependencies || {}
-
+                        
                         if (deps['@minecraft/server'] || deps['@minecraft/server-ui']) {
                             console.log('')
                             console.log(chalk.magenta('Minecraft Dependencies'))
@@ -1319,7 +1301,7 @@ export function analyzeProjectTask(projectPath: string): TaskFunction {
             try {
                 const manifest: ProjectManifest = JSON.parse(fs.readFileSync(resourceManifestPath, 'utf8'))
                 const projectName = getProjectDisplayName(projectPath, manifest)
-
+                
                 console.log('')
                 console.log(chalk.yellow('Resource Pack Info'))
                 console.log(`Name: ${projectName}`)
@@ -1349,7 +1331,7 @@ export function backupProjectTask(projectPath: string, rootPath: string): TaskFu
         try {
             const backupsDir = path.join(rootPath, 'backups')
             if (!fs.existsSync(backupsDir)) {
-                fs.mkdirSync(backupsDir, { recursive: true })
+                fs.mkdirSync(backupsDir, {recursive: true})
             }
 
             rushstack.FileSystem.copyFiles({
@@ -1382,17 +1364,18 @@ export function backupProjectTask(projectPath: string, rootPath: string): TaskFu
     }
 }
 
+
 export function createSymlink(projectPath: string, projectName: string): TaskFunction {
     return async () => {
-        //vê se a pasta existe e se está dentro de projects
         if (!validateProjectContext(projectPath)) return
 
         console.log(chalk.yellow('Creating new Symlink for project...'))
 
-        let projectBehaviorPath = config.paths.behaviorPack
-        let projectResourcePath = config.paths.resourcePack
-
-        const deploymentChoices = ['BedrockGDK', 'PreviewGDK']
+        const projectBehaviorPath = path.join(projectPath, 'behavior_pack')
+        const projectResourcePath = path.join(projectPath, 'resource_pack')
+        
+        
+        const deploymentChoices = ['PreviewGDK', 'BedrockGDK']
         const answers = await inquirer.prompt([
             {
                 type: 'list',
@@ -1401,7 +1384,7 @@ export function createSymlink(projectPath: string, projectName: string): TaskFun
                 choices: deploymentChoices
             }
         ])
-
+        
         const deploymentPath = getGameDeploymentRootPaths()[answers.minecraftVersion as keyof GameDeploymentRootPaths]
 
         if (deploymentPath === undefined) {
@@ -1479,7 +1462,7 @@ export function generateUuidsTask(projectPath: string): TaskFunction {
             if (fs.existsSync(resourceManifestPath)) {
                 filesToFormat.push(resourceManifestPath)
             }
-
+            
             const workspaceRoot = path.resolve(projectPath, '..', '..')
             const prettierSuccess = runPrettier(filesToFormat, workspaceRoot)
             if (!prettierSuccess) {
@@ -1709,7 +1692,7 @@ export function updateVersionTask(projectPath: string): TaskFunction {
             if (fs.existsSync(resourceManifestPath)) {
                 filesToFormat.push(resourceManifestPath)
             }
-
+            
             const workspaceRoot = path.resolve(projectPath, '..', '..')
             const prettierSuccess = runPrettier(filesToFormat, workspaceRoot)
             if (!prettierSuccess) {
@@ -1804,7 +1787,7 @@ export function debugTask(projectPath: string): TaskFunction {
         console.log(chalk.gray('─'.repeat(60)))
 
         const projectName = path.basename(projectPath)
-
+        
         // Project Information
         console.log(chalk.blue.bold('Project Information:'))
         console.log(`  ${chalk.cyan('Name:')} ${projectName}`)
@@ -1816,7 +1799,7 @@ export function debugTask(projectPath: string): TaskFunction {
         // Environment Variables
         console.log(chalk.green.bold('Environment Variables:'))
         const envVars = [
-            'NODE_ENV', 'REAL_CWD', 'APPDATA', 'LOCALAPPDATA',
+            'NODE_ENV', 'REAL_CWD', 'APPDATA', 'LOCALAPPDATA', 
             'CUSTOM_DEPLOYMENT_PATH', 'PROJECT_NAME', 'MINECRAFT_PRODUCT'
         ]
         envVars.forEach(envVar => {
@@ -1837,14 +1820,14 @@ export function debugTask(projectPath: string): TaskFunction {
                 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
                 const deps = packageJson.dependencies || {}
                 const devDeps = packageJson.devDependencies || {}
-
+                
                 console.log(`  ${chalk.cyan('Production Dependencies:')}`)
                 Object.entries(deps).forEach(([name, version]) => {
                     if (name.includes('minecraft')) {
                         console.log(`    ${chalk.green('✓')} ${name}: ${version}`)
                     }
                 })
-
+                
                 console.log(`  ${chalk.cyan('Dev Dependencies:')}`)
                 const importantDevDeps = ['typescript', 'esbuild', 'just-scripts']
                 importantDevDeps.forEach(dep => {
@@ -1881,7 +1864,7 @@ export function debugTask(projectPath: string): TaskFunction {
                     console.log(`    ${chalk.cyan('Format Version:')} ${manifest.format_version || chalk.red('Missing')}`)
                     console.log(`    ${chalk.cyan('Min Engine:')} ${manifest.header?.min_engine_version?.join('.') || chalk.red('Missing')}`)
                     console.log(`    ${chalk.cyan('Modules:')} ${manifest.modules?.length || 0}`)
-
+                    
                     // Check for common issues
                     if (!manifest.header?.uuid || !manifest.header?.uuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
                         console.log(`    ${chalk.red('⚠ Invalid or missing UUID format')}`)
@@ -1927,9 +1910,9 @@ export function debugTask(projectPath: string): TaskFunction {
             try {
                 const tsFiles = fs.readdirSync(tscriptsPath, { recursive: true })
                     .filter((file: any) => typeof file === 'string' && file.endsWith('.ts'))
-
+                
                 console.log(`  ${chalk.green('✓')} Found ${tsFiles.length} TypeScript files`)
-
+                
                 if (tsFiles.length > 0) {
                     console.log(`    ${chalk.cyan('Files:')}`)
                     tsFiles.slice(0, 8).forEach((file: any) => {
@@ -1941,7 +1924,7 @@ export function debugTask(projectPath: string): TaskFunction {
                     if (tsFiles.length > 8) {
                         console.log(`      ... and ${tsFiles.length - 8} more files`)
                     }
-
+                    
                     // Check for main.ts
                     const hasMainTs = tsFiles.some((file: any) => file === 'main.ts' || file.endsWith('/main.ts'))
                     if (hasMainTs) {
@@ -1965,9 +1948,9 @@ export function debugTask(projectPath: string): TaskFunction {
             try {
                 const jsFiles = fs.readdirSync(scriptsPath, { recursive: true })
                     .filter((file: any) => typeof file === 'string' && file.endsWith('.js'))
-
+                
                 console.log(`  ${chalk.green('✓')} Found ${jsFiles.length} compiled JavaScript files`)
-
+                
                 if (jsFiles.length > 0) {
                     jsFiles.slice(0, 5).forEach((file: any) => {
                         const filePath = path.join(scriptsPath, file)
@@ -1992,20 +1975,20 @@ export function debugTask(projectPath: string): TaskFunction {
         console.log(chalk.cyan.bold('Deployment Status:'))
         const paths = getGameDeploymentRootPaths()
         let deployedCount = 0
-
+        
         Object.entries(paths).forEach(([product, deployPath]) => {
             if (deployPath && fs.existsSync(deployPath)) {
                 console.log(`  ${chalk.green('✓')} ${product}: ${deployPath}`)
-
+                
                 const behaviorDeployPath = path.join(deployPath, BehaviorPacksPath, `${projectName}_BP`)
                 const resourceDeployPath = path.join(deployPath, ResourcePacksPath, `${projectName}_RP`)
-
+                
                 let productDeployed = false
-
+                
                 if (fs.existsSync(behaviorDeployPath)) {
                     console.log(`    ${chalk.green('✓')} Behavior pack deployed`)
                     productDeployed = true
-
+                    
                     // Check if scripts are deployed
                     const deployedScriptsPath = path.join(behaviorDeployPath, 'scripts')
                     if (fs.existsSync(deployedScriptsPath)) {
@@ -2016,20 +1999,20 @@ export function debugTask(projectPath: string): TaskFunction {
                 } else {
                     console.log(`    ${chalk.red('✗')} Behavior pack not deployed`)
                 }
-
+                
                 if (fs.existsSync(resourceDeployPath)) {
                     console.log(`    ${chalk.green('✓')} Resource pack deployed`)
                     productDeployed = true
                 } else {
                     console.log(`    ${chalk.red('✗')} Resource pack not deployed`)
                 }
-
+                
                 if (productDeployed) deployedCount++
             } else {
                 console.log(`  ${chalk.red('✗')} ${product}: Not found or inaccessible`)
             }
         })
-
+        
         if (deployedCount === 0) {
             console.log(`  ${chalk.yellow('⚠')} Project not deployed to any Minecraft installation`)
             console.log(`    ${chalk.gray('Run: npm run local-deploy')}`)
@@ -2042,7 +2025,7 @@ export function debugTask(projectPath: string): TaskFunction {
         console.log(`  ${chalk.cyan('Node.js:')} ${process.version}`)
         console.log(`  ${chalk.cyan('Memory Usage:')} ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB / ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`)
         console.log(`  ${chalk.cyan('Uptime:')} ${Math.round(process.uptime())}s`)
-
+        
         // Check for common tools
         const tools = ['code', 'git', 'npm', 'npx']
         console.log(`  ${chalk.cyan('Available Tools:')}`)
@@ -2059,18 +2042,18 @@ export function debugTask(projectPath: string): TaskFunction {
         // Common Issues Check
         console.log(chalk.red.bold('Common Issues Check:'))
         const issues: string[] = []
-
+        
         // Check for spaces in path
         if (projectPath.includes(' ')) {
             issues.push('Project path contains spaces - may cause build issues')
         }
-
+        
         // Check for missing main.ts
         const mainTsPath = path.join(projectPath, 'tscripts', 'main.ts')
         if (!fs.existsSync(mainTsPath)) {
             issues.push('main.ts entry point not found in tscripts/')
         }
-
+        
         // Check for outdated dependencies
         if (fs.existsSync(packageJsonPath)) {
             try {
@@ -2079,9 +2062,9 @@ export function debugTask(projectPath: string): TaskFunction {
                 if (deps['@minecraft/server'] && deps['@minecraft/server'].startsWith('1.')) {
                     issues.push('@minecraft/server version may be outdated (v1.x)')
                 }
-            } catch { }
+            } catch {}
         }
-
+        
         if (issues.length > 0) {
             issues.forEach((issue, i) => {
                 console.log(`  ${chalk.red(`${i + 1}.`)} ${issue}`)
@@ -2130,8 +2113,8 @@ export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
             const availableForImport = behaviorPacks.filter(devProject => {
                 // Extract project name from development project (remove _BP suffix and product info)
                 const projectName = devProject.name.replace(/ \(.+\)$/, '').replace(/_BP$/, '')
-                return !currentProjects.some(currentProject =>
-                    currentProject === projectName ||
+                return !currentProjects.some(currentProject => 
+                    currentProject === projectName || 
                     currentProject.replace(/\s+/g, '_') === projectName ||
                     projectName.includes(currentProject) ||
                     currentProject.includes(projectName)
@@ -2145,7 +2128,7 @@ export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
             }
 
             // Create choices for inquirer - individual projects + "Import All" option
-            const projectChoices: Array<{ name: string, value: any }> = availableForImport.map(project => ({
+            const projectChoices: Array<{name: string, value: any}> = availableForImport.map(project => ({
                 name: project.name,
                 value: project
             }))
@@ -2185,7 +2168,7 @@ export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
                     let projectName = devProject.name.replace(/ \(.+\)$/, '') // Remove (BedrockUWP) etc
                     projectName = projectName.replace(/[_\s]*(BP|RP|bp|rp)$/i, '') // Remove BP/RP suffixes
                     projectName = projectName.trim()
-
+                    
                     const folderName = projectName.replace(/\s+/g, '_')
                     const newProjectPath = path.join(projectsDir, folderName)
 
@@ -2220,10 +2203,10 @@ export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
 
                     const resourceProject = developmentProjects.find(p => {
                         if (p.type !== 'resource') return false
-
+                        
                         // Check if any variation matches
-                        return resourcePackVariations.some(variation =>
-                            p.name.includes(variation) ||
+                        return resourcePackVariations.some(variation => 
+                            p.name.includes(variation) || 
                             p.name.replace(/ \(.+\)$/, '').includes(variation.replace(/ \(.+\)$/, ''))
                         )
                     })
@@ -2269,7 +2252,7 @@ export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
 
                     if (fs.existsSync(scriptsPath)) {
                         console.log(chalk.gray('  Moving scripts to tscripts (keeping original format)...'))
-
+                        
                         // Copy scripts folder to tscripts maintaining original format
                         rushstack.FileSystem.copyFiles({
                             sourcePath: scriptsPath,
@@ -2304,11 +2287,11 @@ console.log('${projectName} loaded successfully!');
                     // Copy template configuration files
                     const templatePath = path.join(rootPath, 'projects', 'template')
                     const configFiles = ['tsconfig.json', '.vscode']
-
+                    
                     configFiles.forEach(configFile => {
                         const srcPath = path.join(templatePath, configFile)
                         const destPath = path.join(newProjectPath, configFile)
-
+                        
                         if (fs.existsSync(srcPath) && !fs.existsSync(destPath)) {
                             if (fs.statSync(srcPath).isDirectory()) {
                                 rushstack.FileSystem.copyFiles({
@@ -2339,7 +2322,7 @@ console.log('${projectName} loaded successfully!');
             console.log('')
             console.log(chalk.green(`✓ Import completed!`))
             console.log(chalk.blue(`Successfully imported: ${importedCount} project(s)`))
-
+            
             if (errors.length > 0) {
                 console.log(chalk.red(`Failed imports: ${errors.length}`))
                 errors.forEach(error => {
@@ -2350,116 +2333,6 @@ console.log('${projectName} loaded successfully!');
 
         } catch (error: any) {
             console.log(chalk.red('✗ Failed to import development projects:'), error.message)
-        }
-    }
-}
-
-export function importWorldProject(projectPath: string, roothPath: string) {
-    return async () => {
-        //vê se a pasta existe e se está dentro de projects
-        if (!validateProjectContext(projectPath)) return
-
-        const deploymentChoices = ['BedrockGDK', 'PreviewGDK']
-        const answers = await inquirer.prompt([
-            {
-                type: 'list',
-                name: 'minecraftVersion',
-                message: 'Select minecraft version:',
-                choices: deploymentChoices
-            }
-        ])
-
-        const deploymentPath = getGameDeploymentRootPaths()[answers.minecraftVersion as keyof GameDeploymentRootPaths]
-        if (deploymentPath === undefined) {
-            throw new Error('Deployment path is undefined. Make sure you have the right minecraft version installed (Minecraft GDK).')
-        }
-
-        const deploymentWorldPath = path.join(deploymentPath, worldPath)
-
-        const worlds: World[] = fs.readdirSync(deploymentWorldPath, { withFileTypes: true }).map(worldFolder => {
-            const worldPath = path.join(deploymentWorldPath, worldFolder.name)
-            const worldNameFilePath = path.join(worldPath, 'levelname.txt')
-            const worldName = fs.readFileSync(worldNameFilePath, { encoding: "utf8" })
-            return {
-                path: worldPath,
-                worldName: worldName
-            }
-        })
-
-        const choices = worlds.map(world => world.worldName)
-        const answers2 = await inquirer.prompt([
-            {
-                type: 'list',
-                name: 'worldName',
-                message: 'Select minecraft version:',
-                choices: choices
-            }
-        ])
-
-        const selectedWorld = answers2.worldName
-        const selectedWorldPath = worlds.find(w => w.worldName == selectedWorld)?.path
-
-        const joinProjectWorldPath = path.join(config.paths.project, projectWorldFolderName)
-        const internalProjectWorldPath = !fs.existsSync(joinProjectWorldPath) ? fs.mkdirSync(joinProjectWorldPath) : joinProjectWorldPath
-
-        if (selectedWorldPath && internalProjectWorldPath) fs.cpSync(selectedWorldPath, internalProjectWorldPath, { force: true, recursive: true })
-        else throw Error('✗ Failure to import the world')
-    }
-}
-
-export function createMcWorld(projectPath: string) {
-    return async () => {
-        //vê se a pasta existe e se está dentro de projects
-        if (!validateProjectContext(projectPath)) return
-
-        const worldPath = path.join(projectPath, 'world')
-        if (fs.existsSync(worldPath)) {
-            const worldBPFolder = path.join(worldPath, 'behavior_packs')
-            const worldRPFolder = path.join(worldPath, 'resource_packs')
-
-            const projectInWorldBPFolder = path.join(worldBPFolder, `${config.projectName}_BP`)
-            const projectInWorldRPFolder = path.join(worldRPFolder, `${config.projectName}_RP`)
-
-            const projectBPFolder = config.paths.behaviorPack
-            const projectRPFolder = config.paths.resourcePack
-
-            if (fs.existsSync(projectInWorldBPFolder)) fs.rmSync(projectInWorldBPFolder)
-            if (fs.existsSync(projectInWorldRPFolder)) fs.rmSync(projectInWorldRPFolder)
-
-            fs.mkdirSync(projectInWorldBPFolder, { recursive: true })
-            fs.mkdirSync(projectInWorldRPFolder, { recursive: true })
-
-            fs.cpSync(projectBPFolder, projectInWorldBPFolder, { recursive: true, force: true })
-            fs.cpSync(projectRPFolder, projectInWorldRPFolder, { recursive: true, force: true })
-
-
-            const distDir = path.join(projectPath, projectDistFolderName)
-            if (!fs.existsSync(distDir)) {
-                fs.mkdirSync(distDir, { recursive: true })
-            }
-            const mcaddonFile = path.join(distDir, `${config.projectName}.mcworld`)
-
-            try {
-                const zip = new zip_lib.Zip()
-
-                console.log(`Adicionando behavior pack: ${projectBPFolder}`)
-                zip.addFolder(projectBPFolder!, `${config.projectName}_BP`)
-
-
-                console.log(`Adicionando resource pack: ${projectInWorldRPFolder}`)
-                zip.addFolder(projectInWorldRPFolder!, `${config.projectName}_RP`)
-
-
-                await zip.archive(mcaddonFile)
-                console.log(`[SUCCESS] McAddon criado com sucesso: ${mcaddonFile}`)
-            } catch (error: any) {
-                console.error(`[ERROR] Falha ao criar McAddon: ${error.message}`)
-                throw error
-            }
-
-
-        } else {
-            console.log(chalk.red('✗ Failed to create .mcworld, the world folder does not exist in the project. Use import-world-project to import a world from your Minecraft.'))
         }
     }
 }
@@ -2496,15 +2369,15 @@ function compareFiles(currentPath: string, remotePath: string): FileComparison {
     if (!currentExists && remoteExists) {
         return { file, status: 'new', currentExists: false, remoteExists: true }
     }
-
+    
     if (currentExists && !remoteExists) {
         return { file, status: 'missing', currentExists: true, remoteExists: false }
     }
-
+    
     if (currentExists && remoteExists) {
         const currentContent = normalizeContent(fs.readFileSync(currentPath, 'utf8'))
         const remoteContent = normalizeContent(fs.readFileSync(remotePath, 'utf8'))
-
+        
         const status = currentContent !== remoteContent ? 'modified' : 'up-to-date'
         return { file, status, currentExists: true, remoteExists: true }
     }
@@ -2524,7 +2397,7 @@ function getStatusDisplay(status: FileStatus): { color: any, text: string } {
 
 async function selectFilesToUpdate(files: FileComparison[]): Promise<string[]> {
     const differentFiles = files.filter(f => f.status !== 'up-to-date')
-
+    
     if (differentFiles.length === 0) {
         console.log(chalk.green('✓ All files are up to date!'))
         console.log(chalk.gray('You can still force update if needed'))
@@ -2595,8 +2468,8 @@ async function downloadRepository(repoUrl: string, tempDir: string): Promise<voi
 }
 
 async function updateFiles(
-    filesToUpdate: string[],
-    sourcePath: string,
+    filesToUpdate: string[], 
+    sourcePath: string, 
     targetPath: string,
     handleMissing: boolean = true
 ): Promise<UpdateResult> {
@@ -2655,7 +2528,7 @@ export function updateWorkspaceTask(projectPath: string, rootPath: string): Task
         console.log(chalk.gray('─'.repeat(50)))
 
         const templatePath = path.join(rootPath, 'projects', 'template')
-
+        
         try {
             const filesToCompare = [
                 '.vscode/tasks.json',
@@ -2750,45 +2623,4 @@ export function updateBedrockWorkspaceTask(rootPath: string): TaskFunction {
             rimraf.sync(tempDir)
 
             // Select files to update
-            const selectedFiles = await selectFilesToUpdate(fileComparisons)
-            if (selectedFiles.length === 0) return
-
-            // Display summary
-            const differentFiles = fileComparisons.filter(f => f.status !== 'up-to-date')
-            displayUpdateSummary(selectedFiles, differentFiles)
-
-            // Download files again for update
-            console.log(chalk.blue('\nDownloading latest files for update...'))
-            await downloadRepository(repoUrl, tempDir)
-
-            // Update files
-            const { updatedCount, errors } = await updateFiles(
-                selectedFiles,
-                tempDir,
-                rootPath,
-                true
-            )
-
-            // Clean up
-            rimraf.sync(tempDir)
-
-            // Final summary
-            const filesToKeep = differentFiles.filter(f => !selectedFiles.includes(f.file))
-            console.log('')
-            console.log(chalk.green('✓ Workspace update completed!'))
-            console.log(chalk.blue(`Updated files: ${updatedCount}`))
-            console.log(chalk.red(`Kept current: ${filesToKeep.length}`))
-
-            if (errors.length > 0) {
-                console.log(chalk.red(`Errors: ${errors.length}`))
-                errors.forEach(error => console.log(chalk.red(`  - ${error}`)))
-            }
-
-        } catch (error: any) {
-            console.log(chalk.red('✗ Failed to update workspace:'), error.message)
-            if (fs.existsSync(tempDir)) {
-                rimraf.sync(tempDir)
-            }
-        }
-    }
-}
+            const selectedFiles = await selectFilesToUpdate(fileC

@@ -287,6 +287,32 @@
                 "focus": true
             },
             "detail": "Create a windows Symlink at local Minecraft folder"
+        },
+        {
+            "label": "Import World Project",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "import-world-project"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+                "focus": true
+            },
+            "detail": "Import world at local Minecraft folder to project folder"
+        },
+        {
+            "label": "Create McWorld",
+            "type": "shell",
+            "command": "npm",
+            "args": ["run", "create-mcworld"],
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+                "focus": true
+            },
+            "detail": "Build and package project as .mcworld file"
         }
     ]
 }

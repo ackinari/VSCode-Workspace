@@ -53,6 +53,8 @@
         "analyze": "cross-env \"REAL_CWD=%CD%\" just-scripts analyze",
         "backup": "cross-env \"REAL_CWD=%CD%\" just-scripts backup",
         "update-version": "cross-env \"REAL_CWD=%CD%\" just-scripts update-version",
+        "import-world-project": "cross-env \"REAL_CWD=%CD%\" just-scripts import-world-project",
+        "create-mcworld": "cross-env \"REAL_CWD=%CD%\" just-scripts create-mcworld",
         "generate-uuids": "cross-env \"REAL_CWD=%CD%\" just-scripts generate-uuids",
         "list-projects": "just-scripts list-projects",
         "open-mc-folder": "just-scripts open-mc-folder",

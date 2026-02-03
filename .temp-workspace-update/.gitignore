@@ -1,0 +1,18 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Temporary files
+just.config.ts.old
+*.temp.json
+tsconfig.temp.json
+package-lock.json
+
+# Others
+TODO.md
+
+# personal
+bun.lock
+backups/*
+projects/*
+!projects/template/

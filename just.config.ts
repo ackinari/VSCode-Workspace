@@ -12,11 +12,13 @@ import {
     cloneProjectTask,
     conditionalTypeScriptTask,
     copyTask,
+    createMcWorld,
     createSymlink,
     debugTask,
     deleteProjectTask,
     generateUuidsTask,
     importDevelopmentProjectsTask,
+    importWorldProject,
     listDevelopmentProjectsTask,
     listProjectsTask,
     mcaddonTask,
@@ -180,6 +182,8 @@ const TASK_LIST: Record<string, Function> = {
     'update-version': () => updateVersionTask(config.paths.project),
     'generate-uuids': () => generateUuidsTask(config.paths.project),
     'create-symlink': () => createSymlink(config.paths.project, config.projectName),
+    'import-world-project': () => importWorldProject(config.paths.project, config.paths.root),
+    "create-mcworld": () => createMcWorld(config.paths.project),
 
     // workspace
     'new-project': () => newProjectTask(config.paths.root),
