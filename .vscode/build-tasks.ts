@@ -2423,8 +2423,8 @@ export function createMcWorld(projectPath: string) {
             const projectBPFolder = config.paths.behaviorPack
             const projectRPFolder = config.paths.resourcePack
 
-            if (fs.existsSync(projectInWorldBPFolder)) fs.rmSync(projectInWorldBPFolder)
-            if (fs.existsSync(projectInWorldRPFolder)) fs.rmSync(projectInWorldRPFolder)
+            if (fs.existsSync(projectInWorldBPFolder)) fs.rmSync(projectInWorldBPFolder, { recursive: true })
+            if (fs.existsSync(projectInWorldRPFolder)) fs.rmSync(projectInWorldRPFolder, { recursive: true })
 
             fs.mkdirSync(projectInWorldBPFolder, { recursive: true })
             fs.mkdirSync(projectInWorldRPFolder, { recursive: true })
@@ -2442,12 +2442,12 @@ export function createMcWorld(projectPath: string) {
             try {
                 const zip = new zip_lib.Zip()
 
-                console.log(`Adicionando behavior pack: ${projectBPFolder}`)
-                zip.addFolder(projectBPFolder!, `${config.projectName}_BP`)
-
-
-                console.log(`Adicionando resource pack: ${projectInWorldRPFolder}`)
-                zip.addFolder(projectInWorldRPFolder!, `${config.projectName}_RP`)
+                console.log(`Adicionando world folder: ${projectBPFolder}`)
+                zip.addFolder(worldPath)
+                // console.log(`Adicionando behavior pack: ${projectBPFolder}`)
+                // zip.addFolder(projectBPFolder!, `${config.projectName}_BP`)
+                // console.log(`Adicionando resource pack: ${projectInWorldRPFolder}`)
+                // zip.addFolder(projectInWorldRPFolder!, `${config.projectName}_RP`)
 
 
                 await zip.archive(mcaddonFile)
