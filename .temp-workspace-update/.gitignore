@@ -16,5 +16,3 @@ bun.lock
 backups/*
 projects/*
 !projects/template/
-projects/*/world/behavior_packs
-projects/*/world/resource_packs

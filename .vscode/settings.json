@@ -26,5 +26,8 @@
 
     //? user preferences
     "editor.tabSize": 4,
-    "editor.formatOnSave": false
+    "editor.formatOnSave": false,
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    }
 }
