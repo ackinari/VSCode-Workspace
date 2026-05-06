@@ -1,44 +1,40 @@
 {
     "ignoreDeprecations": "6.0",
     "compilerOptions": {
-        //? = = = important = = =
+        //? = = = bedrock ecosystem = = =
         "target": "es2020",
-        "module": "commonjs",
-        "lib": ["es2020", "dom"],
-        "moduleResolution": "node",
+        "module": "esnext",
+        "lib": ["es2020"],
+        "moduleResolution": "bundler",
+        "types": ["bun-types", "@minecraft/server", "@minecraft/server-ui", "@minecraft/debug-utilities"],
 
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
         "declaration": false,
-        "noLib": false,
-        "emitDecoratorMetadata": true, 
-        "experimentalDecorators": true, 
-        "sourceMap": false, 
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "sourceMap": false,
         "pretty": true,
 
         //? = = = user preferences = = =
         "allowSyntheticDefaultImports": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
-        // "allowUnreachableCode": true,
-        // "allowUnusedLabels": true,
-        // "noImplicitAny": true, 
+        "allowJs": true,
         "noImplicitReturns": true,
-        // "noImplicitUseStrict": false, 
+        // "noImplicitAny": true,
+        // "noImplicitUseStrict": false,
         // "noUnusedLocals": true,
         // "noUnusedParameters": true,
+        // "allowUnreachableCode": true,
+        // "allowUnusedLabels": true,
+        // "checkJs": false,
 
-        // "noEmit": true, 
-        "allowJs": true,
-        // "checkJs": false, 
-
-        //? = = = others = = =
+        //? = = = Optimization = = =
         "listFiles": false,
         "noEmitHelpers": true,
         "skipLibCheck": true,
-        "skipDefaultLibCheck": true,
+        "skipDefaultLibCheck": true
     },
-    "exclude": [
-        "node_modules",
-        "projects/**/behavior_pack/scripts/**/*",
-        "libraries/**/*.js"
-    ]
+    "exclude": ["node_modules", "**/bin/**"],
 }
