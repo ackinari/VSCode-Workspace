@@ -27,7 +27,7 @@ import {
     updateVersionTask,
     updateWorkspaceTask,
     watchTask,
-} from './.vscode/build-tasks'
+} from './build-tasks'
 
 //§e = = = = = = = = default configs = = = = = = = =
 
