@@ -2,17 +2,8 @@
 node_modules/
 */node_modules/
 
-# Temporary files
-just.config.ts.old
-*.temp.json
-tsconfig.temp.json
-package-lock.json
-
-# Others
-TODO.md
-
 # personal
-bun.lock
+TODO.md
 backups/*
 projects/*
 !projects/template/
