@@ -1,7 +1,14 @@
 {
     "recommendations": [
+        // minecraft related
+        "dingsel.bedrock-ui",
+        "blockceptionLtd.blockceptionvscodeminecraftbedrockdevelopmentextension",
+        "mojang-studios.minecraft-debugger",
+        "nobuwu.mc-color",
+        "jannisx11.snowstorm",
+        // workspace related
+        "aaron-bond.better-comments",
         "esbenp.prettier-vscode",
-        "blockceptionltd.blockceptionvscodeminecraftbedrockdevelopmentextension",
-        "mojang-studios.minecraft-debugger"
+        "amodio.toggle-excluded-files",
     ]
 }
