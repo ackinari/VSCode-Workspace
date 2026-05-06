@@ -2,23 +2,34 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "New Project",
+            "label": "Debug",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "new-project"],
+            "command": "bun run debug",
+            // "command": "bun run ${workspaceFolder}/tools/project-manager.ts new",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
                 "clear": true,
                 "focus": true,
             },
-            "detail": "Create new project from template"
+            "detail": "Creates a new project from a template"
+        },
+        {
+            "label": "New Project",
+            "type": "shell",
+            "command": "bun run new-project",
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+                "focus": true,
+            },
+            "detail": "Creates a new project from a template"
         },
         {
             "label": "Clone Project",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "clone-project"],
+            "command": "bun run clone-project",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -30,8 +41,7 @@
         {
             "label": "Delete Project",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "delete-project"],
+            "command": "bun run delete-project",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -47,8 +57,7 @@
         {
             "label": "Rename Project",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "rename-project"],
+            "command": "bun run rename-project",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -60,8 +69,7 @@
         {
             "label": "Open Project",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "open-project"],
+            "command": "bun run open-project",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -71,10 +79,20 @@
             "detail": "Open project directory in VSCode"
         },
         {
+            "label": "List Projects",
+            "type": "shell",
+            "command": "bun run list-projects",
+            "group": "build",
+            "presentation": {
+                "showReuseMessage": false,
+                "clear": true,
+            },
+            "detail": "List all projects deployed to Minecraft folders"
+        },
+        {
             "label": "List Development Projects",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "list-development-projects"],
+            "command": "bun run list-development-projects",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -85,8 +103,7 @@
         {
             "label": "Import Development Projects",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "import-development-projects"],
+            "command": "bun run import-development-projects",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,
@@ -98,8 +115,7 @@
         {
             "label": "Update Bedrock-Workspace",
             "type": "shell",
-            "command": "npm",
-            "args": ["run", "update-bedrock-workspace"],
+            "command": "bun run update-bedrock-workspace",
             "group": "build",
             "presentation": {
                 "showReuseMessage": false,

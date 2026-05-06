@@ -422,9 +422,9 @@ function openInVSCode(projectPath: string): void {
 
 // ===== EXISTING FUNCTIONS (keeping original functionality) =====
 
-export function setupEnvironment(envPath: string): void {
-    dotenv.config({path: envPath})
-}
+// export function setupEnvironment(envPath: string): void {
+//     dotenv.config({path: envPath})
+// }
 
 export function cleanTask(dirs: string[]): TaskFunction {
     return () => {
@@ -1481,48 +1481,46 @@ export function generateUuidsTask(projectPath: string): TaskFunction {
     }
 }
 
-export function listProjectsTask(rootPath: string): TaskFunction {
-    return () => {
-        if (!fs.existsSync(rootPath) || !rootPath.includes('workspace')) {
-            console.log(chalk.red('ERROR: This command must be run from within the workspace.'))
-            console.log(chalk.gray('Navigate to the workspace root first'))
-            return
+export function listProjectsTask(rootPath: string) {
+    if (!fs.existsSync(rootPath) || !rootPath.includes('workspace')) {
+        console.log(chalk.red('ERROR: This command must be run from within the workspace.'))
+        console.log(chalk.gray('Navigate to the workspace root first'))
+        return
+    }
+
+    console.clear()
+    console.log(chalk.cyan.bold('Available Projects'))
+    console.log(chalk.gray('─'.repeat(50)))
+
+    const projectsDir = path.join(rootPath, 'projects')
+    if (!validateProjectsDirectory(projectsDir)) return
+
+    const projects = getAvailableProjects(projectsDir)
+    if (!checkProjectsExist(projects)) return
+
+    projects.forEach((project, index) => {
+        const projectPath = path.join(projectsDir, project)
+        const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+
+        let projectInfo = `${index + 1}. ${project}`
+
+        if (fs.existsSync(behaviorManifestPath)) {
+            try {
+                const manifest: ProjectManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
+                const name = getProjectDisplayName(projectPath, manifest)
+                const version = manifest.header?.version?.join('.') || 'Unknown'
+                projectInfo += ` (${name} v${version})`
+            } catch (error) {
+                projectInfo += ' (Invalid manifest)'
+            }
+        } else {
+            projectInfo += ' (No manifest)'
         }
 
-        console.clear()
-        console.log(chalk.cyan.bold('Available Projects'))
-        console.log(chalk.gray('─'.repeat(50)))
+        console.log(projectInfo)
+    })
 
-        const projectsDir = path.join(rootPath, 'projects')
-        if (!validateProjectsDirectory(projectsDir)) return
-
-        const projects = getAvailableProjects(projectsDir)
-        if (!checkProjectsExist(projects)) return
-
-        projects.forEach((project, index) => {
-            const projectPath = path.join(projectsDir, project)
-            const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
-
-            let projectInfo = `${index + 1}. ${project}`
-
-            if (fs.existsSync(behaviorManifestPath)) {
-                try {
-                    const manifest: ProjectManifest = JSON.parse(fs.readFileSync(behaviorManifestPath, 'utf8'))
-                    const name = getProjectDisplayName(projectPath, manifest)
-                    const version = manifest.header?.version?.join('.') || 'Unknown'
-                    projectInfo += ` (${name} v${version})`
-                } catch (error) {
-                    projectInfo += ' (Invalid manifest)'
-                }
-            } else {
-                projectInfo += ' (No manifest)'
-            }
-
-            console.log(projectInfo)
-        })
-
-        console.log(chalk.blue(`\nTotal projects: ${projects.length}`))
-    }
+    console.log(chalk.blue(`\nTotal projects: ${projects.length}`))
 }
 
 export function openMinecraftFolderTask(): TaskFunction {
@@ -1778,312 +1776,310 @@ export function openWorkspaceTask(rootPath: string): TaskFunction {
     }
 }
 
-export function debugTask(projectPath: string): TaskFunction {
-    return () => {
-        if (!validateProjectContext(projectPath)) return
+export function debugTask(projectPath: string) {
+    if (!validateProjectContext(projectPath)) return
 
-        console.clear()
-        console.log(chalk.red.bold('Debug Information'))
-        console.log(chalk.gray('─'.repeat(60)))
+    console.clear()
+    console.log(chalk.red.bold('Debug Information'))
+    console.log(chalk.gray('─'.repeat(60)))
 
-        const projectName = path.basename(projectPath)
-        
-        // Project Information
-        console.log(chalk.blue.bold('Project Information:'))
-        console.log(`  ${chalk.cyan('Name:')} ${projectName}`)
-        console.log(`  ${chalk.cyan('Path:')} ${projectPath}`)
-        console.log(`  ${chalk.cyan('Working Directory:')} ${process.cwd()}`)
-        console.log(`  ${chalk.cyan('Real CWD:')} ${process.env.REAL_CWD || 'Not set'}`)
-        console.log('')
+    const projectName = path.basename(projectPath)
+    
+    // Project Information
+    console.log(chalk.blue.bold('Project Information:'))
+    console.log(`  ${chalk.cyan('Name:')} ${projectName}`)
+    console.log(`  ${chalk.cyan('Path:')} ${projectPath}`)
+    console.log(`  ${chalk.cyan('Working Directory:')} ${process.cwd()}`)
+    console.log(`  ${chalk.cyan('Real CWD:')} ${process.env.REAL_CWD || 'Not set'}`)
+    console.log('')
 
-        // Environment Variables
-        console.log(chalk.green.bold('Environment Variables:'))
-        const envVars = [
-            'NODE_ENV', 'REAL_CWD', 'APPDATA', 'LOCALAPPDATA', 
-            'CUSTOM_DEPLOYMENT_PATH', 'PROJECT_NAME', 'MINECRAFT_PRODUCT'
-        ]
-        envVars.forEach(envVar => {
-            const value = process.env[envVar]
-            if (value) {
-                console.log(`  ${chalk.green('✓')} ${chalk.cyan(envVar)}: ${value}`)
-            } else {
-                console.log(`  ${chalk.red('✗')} ${chalk.cyan(envVar)}: ${chalk.gray('undefined')}`)
-            }
-        })
-        console.log('')
-
-        // Package.json Dependencies
-        console.log(chalk.magenta.bold('Dependencies:'))
-        const packageJsonPath = path.join(projectPath, '..', '..', 'package.json')
-        if (fs.existsSync(packageJsonPath)) {
-            try {
-                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
-                const deps = packageJson.dependencies || {}
-                const devDeps = packageJson.devDependencies || {}
-                
-                console.log(`  ${chalk.cyan('Production Dependencies:')}`)
-                Object.entries(deps).forEach(([name, version]) => {
-                    if (name.includes('minecraft')) {
-                        console.log(`    ${chalk.green('✓')} ${name}: ${version}`)
-                    }
-                })
-                
-                console.log(`  ${chalk.cyan('Dev Dependencies:')}`)
-                const importantDevDeps = ['typescript', 'esbuild', 'just-scripts']
-                importantDevDeps.forEach(dep => {
-                    if (devDeps[dep]) {
-                        console.log(`    ${chalk.green('✓')} ${dep}: ${devDeps[dep]}`)
-                    } else {
-                        console.log(`    ${chalk.red('✗')} ${dep}: ${chalk.gray('missing')}`)
-                    }
-                })
-            } catch (error) {
-                console.log(`  ${chalk.red('✗')} Failed to read package.json`)
-            }
+    // Environment Variables
+    console.log(chalk.green.bold('Environment Variables:'))
+    const envVars = [
+        'NODE_ENV', 'REAL_CWD', 'APPDATA', 'LOCALAPPDATA', 
+        'CUSTOM_DEPLOYMENT_PATH', 'PROJECT_NAME', 'MINECRAFT_PRODUCT'
+    ]
+    envVars.forEach(envVar => {
+        const value = process.env[envVar]
+        if (value) {
+            console.log(`  ${chalk.green('✓')} ${chalk.cyan(envVar)}: ${value}`)
         } else {
-            console.log(`  ${chalk.red('✗')} package.json not found`)
+            console.log(`  ${chalk.red('✗')} ${chalk.cyan(envVar)}: ${chalk.gray('undefined')}`)
         }
-        console.log('')
+    })
+    console.log('')
 
-        // Manifest Files Analysis
-        console.log(chalk.yellow.bold('Manifest Files:'))
-        const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
-        const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
-
-        const manifestsToCheck = [
-            { path: behaviorManifestPath, type: 'Behavior Pack', color: chalk.blue },
-            { path: resourceManifestPath, type: 'Resource Pack', color: chalk.green }
-        ]
-
-        manifestsToCheck.forEach(({ path: manifestPath, type, color }) => {
-            if (fs.existsSync(manifestPath)) {
-                try {
-                    const manifest: ProjectManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
-                    console.log(`  ${chalk.green('✓')} ${color(type)}: ${manifest.header?.name || 'Unknown'} v${manifest.header?.version?.join('.') || 'Unknown'}`)
-                    console.log(`    ${chalk.cyan('UUID:')} ${manifest.header?.uuid || chalk.red('Missing')}`)
-                    console.log(`    ${chalk.cyan('Format Version:')} ${manifest.format_version || chalk.red('Missing')}`)
-                    console.log(`    ${chalk.cyan('Min Engine:')} ${manifest.header?.min_engine_version?.join('.') || chalk.red('Missing')}`)
-                    console.log(`    ${chalk.cyan('Modules:')} ${manifest.modules?.length || 0}`)
-                    
-                    // Check for common issues
-                    if (!manifest.header?.uuid || !manifest.header?.uuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-                        console.log(`    ${chalk.red('⚠ Invalid or missing UUID format')}`)
-                    }
-                    if (manifest.dependencies && manifest.dependencies.length > 0) {
-                        console.log(`    ${chalk.cyan('Dependencies:')} ${manifest.dependencies.length}`)
-                        manifest.dependencies.forEach((dep, i) => {
-                            console.log(`      ${i + 1}. UUID: ${dep.uuid}, Version: ${dep.version?.join('.') || 'Unknown'}`)
-                        })
-                    }
-                } catch (error: any) {
-                    console.log(`  ${chalk.red('✗')} ${color(type)}: Invalid JSON - ${error.message}`)
+    // Package.json Dependencies
+    console.log(chalk.magenta.bold('Dependencies:'))
+    const packageJsonPath = path.join(projectPath, '..', '..', 'package.json')
+    if (fs.existsSync(packageJsonPath)) {
+        try {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+            const deps = packageJson.dependencies || {}
+            const devDeps = packageJson.devDependencies || {}
+            
+            console.log(`  ${chalk.cyan('Production Dependencies:')}`)
+            Object.entries(deps).forEach(([name, version]) => {
+                if (name.includes('minecraft')) {
+                    console.log(`    ${chalk.green('✓')} ${name}: ${version}`)
                 }
-            } else {
-                console.log(`  ${chalk.red('✗')} ${color(type)}: manifest.json not found`)
-            }
-        })
-        console.log('')
-
-        // TypeScript Configuration
-        console.log(chalk.magenta.bold('TypeScript Configuration:'))
-        const tsconfigPath = path.join(projectPath, 'tsconfig.json')
-        if (fs.existsSync(tsconfigPath)) {
-            try {
-                const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'))
-                console.log(`  ${chalk.green('✓')} tsconfig.json found`)
-                console.log(`    ${chalk.cyan('Target:')} ${tsconfig.compilerOptions?.target || 'Not specified'}`)
-                console.log(`    ${chalk.cyan('Module:')} ${tsconfig.compilerOptions?.module || 'Not specified'}`)
-                console.log(`    ${chalk.cyan('Out Dir:')} ${tsconfig.compilerOptions?.outDir || 'Not specified'}`)
-                console.log(`    ${chalk.cyan('Root Dir:')} ${tsconfig.compilerOptions?.rootDir || 'Not specified'}`)
-            } catch (error) {
-                console.log(`  ${chalk.red('✗')} tsconfig.json: Invalid JSON`)
-            }
-        } else {
-            console.log(`  ${chalk.red('✗')} tsconfig.json not found`)
-        }
-        console.log('')
-
-        // TypeScript Files Analysis
-        console.log(chalk.magenta.bold('TypeScript Files:'))
-        const tscriptsPath = path.join(projectPath, 'tscripts')
-        if (fs.existsSync(tscriptsPath)) {
-            try {
-                const tsFiles = fs.readdirSync(tscriptsPath, { recursive: true })
-                    .filter((file: any) => typeof file === 'string' && file.endsWith('.ts'))
-                
-                console.log(`  ${chalk.green('✓')} Found ${tsFiles.length} TypeScript files`)
-                
-                if (tsFiles.length > 0) {
-                    console.log(`    ${chalk.cyan('Files:')}`)
-                    tsFiles.slice(0, 8).forEach((file: any) => {
-                        const filePath = path.join(tscriptsPath, file)
-                        const stats = fs.statSync(filePath)
-                        const size = formatBytes(stats.size)
-                        console.log(`      - ${file} (${size})`)
-                    })
-                    if (tsFiles.length > 8) {
-                        console.log(`      ... and ${tsFiles.length - 8} more files`)
-                    }
-                    
-                    // Check for main.ts
-                    const hasMainTs = tsFiles.some((file: any) => file === 'main.ts' || file.endsWith('/main.ts'))
-                    if (hasMainTs) {
-                        console.log(`    ${chalk.green('✓')} main.ts entry point found`)
-                    } else {
-                        console.log(`    ${chalk.yellow('⚠')} main.ts entry point not found`)
-                    }
-                }
-            } catch (error) {
-                console.log(`  ${chalk.red('✗')} Error reading tscripts directory`)
-            }
-        } else {
-            console.log(`  ${chalk.red('✗')} tscripts folder not found`)
-        }
-        console.log('')
-
-        // Build Output Analysis
-        console.log(chalk.blue.bold('Build Output:'))
-        const scriptsPath = path.join(projectPath, 'behavior_pack', 'scripts')
-        if (fs.existsSync(scriptsPath)) {
-            try {
-                const jsFiles = fs.readdirSync(scriptsPath, { recursive: true })
-                    .filter((file: any) => typeof file === 'string' && file.endsWith('.js'))
-                
-                console.log(`  ${chalk.green('✓')} Found ${jsFiles.length} compiled JavaScript files`)
-                
-                if (jsFiles.length > 0) {
-                    jsFiles.slice(0, 5).forEach((file: any) => {
-                        const filePath = path.join(scriptsPath, file)
-                        const stats = fs.statSync(filePath)
-                        const size = formatBytes(stats.size)
-                        const mtime = stats.mtime.toLocaleString()
-                        console.log(`      - ${file} (${size}, modified: ${mtime})`)
-                    })
-                    if (jsFiles.length > 5) {
-                        console.log(`      ... and ${jsFiles.length - 5} more files`)
-                    }
-                }
-            } catch (error) {
-                console.log(`  ${chalk.red('✗')} Error reading scripts directory`)
-            }
-        } else {
-            console.log(`  ${chalk.yellow('⚠')} No compiled scripts found (run build first)`)
-        }
-        console.log('')
-
-        // Deployment Status
-        console.log(chalk.cyan.bold('Deployment Status:'))
-        const paths = getGameDeploymentRootPaths()
-        let deployedCount = 0
-        
-        Object.entries(paths).forEach(([product, deployPath]) => {
-            if (deployPath && fs.existsSync(deployPath)) {
-                console.log(`  ${chalk.green('✓')} ${product}: ${deployPath}`)
-                
-                const behaviorDeployPath = path.join(deployPath, BehaviorPacksPath, `${projectName}_BP`)
-                const resourceDeployPath = path.join(deployPath, ResourcePacksPath, `${projectName}_RP`)
-                
-                let productDeployed = false
-                
-                if (fs.existsSync(behaviorDeployPath)) {
-                    console.log(`    ${chalk.green('✓')} Behavior pack deployed`)
-                    productDeployed = true
-                    
-                    // Check if scripts are deployed
-                    const deployedScriptsPath = path.join(behaviorDeployPath, 'scripts')
-                    if (fs.existsSync(deployedScriptsPath)) {
-                        const deployedJsFiles = fs.readdirSync(deployedScriptsPath, { recursive: true })
-                            .filter((file: any) => typeof file === 'string' && file.endsWith('.js'))
-                        console.log(`      Scripts: ${deployedJsFiles.length} files`)
-                    }
-                } else {
-                    console.log(`    ${chalk.red('✗')} Behavior pack not deployed`)
-                }
-                
-                if (fs.existsSync(resourceDeployPath)) {
-                    console.log(`    ${chalk.green('✓')} Resource pack deployed`)
-                    productDeployed = true
-                } else {
-                    console.log(`    ${chalk.red('✗')} Resource pack not deployed`)
-                }
-                
-                if (productDeployed) deployedCount++
-            } else {
-                console.log(`  ${chalk.red('✗')} ${product}: Not found or inaccessible`)
-            }
-        })
-        
-        if (deployedCount === 0) {
-            console.log(`  ${chalk.yellow('⚠')} Project not deployed to any Minecraft installation`)
-            console.log(`    ${chalk.gray('Run: npm run local-deploy')}`)
-        }
-        console.log('')
-
-        // System Information
-        console.log(chalk.white.bold('System Information:'))
-        console.log(`  ${chalk.cyan('Platform:')} ${process.platform} ${process.arch}`)
-        console.log(`  ${chalk.cyan('Node.js:')} ${process.version}`)
-        console.log(`  ${chalk.cyan('Memory Usage:')} ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB / ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`)
-        console.log(`  ${chalk.cyan('Uptime:')} ${Math.round(process.uptime())}s`)
-        
-        // Check for common tools
-        const tools = ['code', 'git', 'npm', 'npx']
-        console.log(`  ${chalk.cyan('Available Tools:')}`)
-        tools.forEach(tool => {
-            try {
-                child_process.execSync(`${tool} --version`, { stdio: 'ignore' })
-                console.log(`    ${chalk.green('✓')} ${tool}`)
-            } catch {
-                console.log(`    ${chalk.red('✗')} ${tool}`)
-            }
-        })
-        console.log('')
-
-        // Common Issues Check
-        console.log(chalk.red.bold('Common Issues Check:'))
-        const issues: string[] = []
-        
-        // Check for spaces in path
-        if (projectPath.includes(' ')) {
-            issues.push('Project path contains spaces - may cause build issues')
-        }
-        
-        // Check for missing main.ts
-        const mainTsPath = path.join(projectPath, 'tscripts', 'main.ts')
-        if (!fs.existsSync(mainTsPath)) {
-            issues.push('main.ts entry point not found in tscripts/')
-        }
-        
-        // Check for outdated dependencies
-        if (fs.existsSync(packageJsonPath)) {
-            try {
-                const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
-                const deps = packageJson.dependencies || {}
-                if (deps['@minecraft/server'] && deps['@minecraft/server'].startsWith('1.')) {
-                    issues.push('@minecraft/server version may be outdated (v1.x)')
-                }
-            } catch {}
-        }
-        
-        if (issues.length > 0) {
-            issues.forEach((issue, i) => {
-                console.log(`  ${chalk.red(`${i + 1}.`)} ${issue}`)
             })
-        } else {
-            console.log(`  ${chalk.green('✓')} No common issues detected`)
+            
+            console.log(`  ${chalk.cyan('Dev Dependencies:')}`)
+            const importantDevDeps = ['typescript', 'esbuild', 'just-scripts']
+            importantDevDeps.forEach(dep => {
+                if (devDeps[dep]) {
+                    console.log(`    ${chalk.green('✓')} ${dep}: ${devDeps[dep]}`)
+                } else {
+                    console.log(`    ${chalk.red('✗')} ${dep}: ${chalk.gray('missing')}`)
+                }
+            })
+        } catch (error) {
+            console.log(`  ${chalk.red('✗')} Failed to read package.json`)
         }
-        console.log('')
-
-        // Summary
-        console.log(chalk.green.bold('Summary:'))
-        console.log(`  ${chalk.cyan('Project:')} ${projectName}`)
-        console.log(`  ${chalk.cyan('Status:')} ${deployedCount > 0 ? chalk.green('Deployed') : chalk.yellow('Not deployed')}`)
-        console.log(`  ${chalk.cyan('Issues:')} ${issues.length > 0 ? chalk.red(`${issues.length} found`) : chalk.green('None')}`)
-        console.log('')
-        console.log(chalk.green('✓ Debug information collected'))
-        console.log(chalk.gray('Use this information when reporting bugs or asking for help'))
-        console.log(chalk.gray('Copy this output and share it with developers for faster troubleshooting'))
+    } else {
+        console.log(`  ${chalk.red('✗')} package.json not found`)
     }
+    console.log('')
+
+    // Manifest Files Analysis
+    console.log(chalk.yellow.bold('Manifest Files:'))
+    const behaviorManifestPath = path.join(projectPath, 'behavior_pack', 'manifest.json')
+    const resourceManifestPath = path.join(projectPath, 'resource_pack', 'manifest.json')
+
+    const manifestsToCheck = [
+        { path: behaviorManifestPath, type: 'Behavior Pack', color: chalk.blue },
+        { path: resourceManifestPath, type: 'Resource Pack', color: chalk.green }
+    ]
+
+    manifestsToCheck.forEach(({ path: manifestPath, type, color }) => {
+        if (fs.existsSync(manifestPath)) {
+            try {
+                const manifest: ProjectManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+                console.log(`  ${chalk.green('✓')} ${color(type)}: ${manifest.header?.name || 'Unknown'} v${manifest.header?.version?.join('.') || 'Unknown'}`)
+                console.log(`    ${chalk.cyan('UUID:')} ${manifest.header?.uuid || chalk.red('Missing')}`)
+                console.log(`    ${chalk.cyan('Format Version:')} ${manifest.format_version || chalk.red('Missing')}`)
+                console.log(`    ${chalk.cyan('Min Engine:')} ${manifest.header?.min_engine_version?.join('.') || chalk.red('Missing')}`)
+                console.log(`    ${chalk.cyan('Modules:')} ${manifest.modules?.length || 0}`)
+                
+                // Check for common issues
+                if (!manifest.header?.uuid || !manifest.header?.uuid.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                    console.log(`    ${chalk.red('⚠ Invalid or missing UUID format')}`)
+                }
+                if (manifest.dependencies && manifest.dependencies.length > 0) {
+                    console.log(`    ${chalk.cyan('Dependencies:')} ${manifest.dependencies.length}`)
+                    manifest.dependencies.forEach((dep, i) => {
+                        console.log(`      ${i + 1}. UUID: ${dep.uuid}, Version: ${dep.version?.join('.') || 'Unknown'}`)
+                    })
+                }
+            } catch (error: any) {
+                console.log(`  ${chalk.red('✗')} ${color(type)}: Invalid JSON - ${error.message}`)
+            }
+        } else {
+            console.log(`  ${chalk.red('✗')} ${color(type)}: manifest.json not found`)
+        }
+    })
+    console.log('')
+
+    // TypeScript Configuration
+    console.log(chalk.magenta.bold('TypeScript Configuration:'))
+    const tsconfigPath = path.join(projectPath, 'tsconfig.json')
+    if (fs.existsSync(tsconfigPath)) {
+        try {
+            const tsconfig = JSON.parse(fs.readFileSync(tsconfigPath, 'utf8'))
+            console.log(`  ${chalk.green('✓')} tsconfig.json found`)
+            console.log(`    ${chalk.cyan('Target:')} ${tsconfig.compilerOptions?.target || 'Not specified'}`)
+            console.log(`    ${chalk.cyan('Module:')} ${tsconfig.compilerOptions?.module || 'Not specified'}`)
+            console.log(`    ${chalk.cyan('Out Dir:')} ${tsconfig.compilerOptions?.outDir || 'Not specified'}`)
+            console.log(`    ${chalk.cyan('Root Dir:')} ${tsconfig.compilerOptions?.rootDir || 'Not specified'}`)
+        } catch (error) {
+            console.log(`  ${chalk.red('✗')} tsconfig.json: Invalid JSON`)
+        }
+    } else {
+        console.log(`  ${chalk.red('✗')} tsconfig.json not found`)
+    }
+    console.log('')
+
+    // TypeScript Files Analysis
+    console.log(chalk.magenta.bold('TypeScript Files:'))
+    const tscriptsPath = path.join(projectPath, 'tscripts')
+    if (fs.existsSync(tscriptsPath)) {
+        try {
+            const tsFiles = fs.readdirSync(tscriptsPath, { recursive: true })
+                .filter((file: any) => typeof file === 'string' && file.endsWith('.ts'))
+            
+            console.log(`  ${chalk.green('✓')} Found ${tsFiles.length} TypeScript files`)
+            
+            if (tsFiles.length > 0) {
+                console.log(`    ${chalk.cyan('Files:')}`)
+                tsFiles.slice(0, 8).forEach((file: any) => {
+                    const filePath = path.join(tscriptsPath, file)
+                    const stats = fs.statSync(filePath)
+                    const size = formatBytes(stats.size)
+                    console.log(`      - ${file} (${size})`)
+                })
+                if (tsFiles.length > 8) {
+                    console.log(`      ... and ${tsFiles.length - 8} more files`)
+                }
+                
+                // Check for main.ts
+                const hasMainTs = tsFiles.some((file: any) => file === 'main.ts' || file.endsWith('/main.ts'))
+                if (hasMainTs) {
+                    console.log(`    ${chalk.green('✓')} main.ts entry point found`)
+                } else {
+                    console.log(`    ${chalk.yellow('⚠')} main.ts entry point not found`)
+                }
+            }
+        } catch (error) {
+            console.log(`  ${chalk.red('✗')} Error reading tscripts directory`)
+        }
+    } else {
+        console.log(`  ${chalk.red('✗')} tscripts folder not found`)
+    }
+    console.log('')
+
+    // Build Output Analysis
+    console.log(chalk.blue.bold('Build Output:'))
+    const scriptsPath = path.join(projectPath, 'behavior_pack', 'scripts')
+    if (fs.existsSync(scriptsPath)) {
+        try {
+            const jsFiles = fs.readdirSync(scriptsPath, { recursive: true })
+                .filter((file: any) => typeof file === 'string' && file.endsWith('.js'))
+            
+            console.log(`  ${chalk.green('✓')} Found ${jsFiles.length} compiled JavaScript files`)
+            
+            if (jsFiles.length > 0) {
+                jsFiles.slice(0, 5).forEach((file: any) => {
+                    const filePath = path.join(scriptsPath, file)
+                    const stats = fs.statSync(filePath)
+                    const size = formatBytes(stats.size)
+                    const mtime = stats.mtime.toLocaleString()
+                    console.log(`      - ${file} (${size}, modified: ${mtime})`)
+                })
+                if (jsFiles.length > 5) {
+                    console.log(`      ... and ${jsFiles.length - 5} more files`)
+                }
+            }
+        } catch (error) {
+            console.log(`  ${chalk.red('✗')} Error reading scripts directory`)
+        }
+    } else {
+        console.log(`  ${chalk.yellow('⚠')} No compiled scripts found (run build first)`)
+    }
+    console.log('')
+
+    // Deployment Status
+    console.log(chalk.cyan.bold('Deployment Status:'))
+    const paths = getGameDeploymentRootPaths()
+    let deployedCount = 0
+    
+    Object.entries(paths).forEach(([product, deployPath]) => {
+        if (deployPath && fs.existsSync(deployPath)) {
+            console.log(`  ${chalk.green('✓')} ${product}: ${deployPath}`)
+            
+            const behaviorDeployPath = path.join(deployPath, BehaviorPacksPath, `${projectName}_BP`)
+            const resourceDeployPath = path.join(deployPath, ResourcePacksPath, `${projectName}_RP`)
+            
+            let productDeployed = false
+            
+            if (fs.existsSync(behaviorDeployPath)) {
+                console.log(`    ${chalk.green('✓')} Behavior pack deployed`)
+                productDeployed = true
+                
+                // Check if scripts are deployed
+                const deployedScriptsPath = path.join(behaviorDeployPath, 'scripts')
+                if (fs.existsSync(deployedScriptsPath)) {
+                    const deployedJsFiles = fs.readdirSync(deployedScriptsPath, { recursive: true })
+                        .filter((file: any) => typeof file === 'string' && file.endsWith('.js'))
+                    console.log(`      Scripts: ${deployedJsFiles.length} files`)
+                }
+            } else {
+                console.log(`    ${chalk.red('✗')} Behavior pack not deployed`)
+            }
+            
+            if (fs.existsSync(resourceDeployPath)) {
+                console.log(`    ${chalk.green('✓')} Resource pack deployed`)
+                productDeployed = true
+            } else {
+                console.log(`    ${chalk.red('✗')} Resource pack not deployed`)
+            }
+            
+            if (productDeployed) deployedCount++
+        } else {
+            console.log(`  ${chalk.red('✗')} ${product}: Not found or inaccessible`)
+        }
+    })
+    
+    if (deployedCount === 0) {
+        console.log(`  ${chalk.yellow('⚠')} Project not deployed to any Minecraft installation`)
+        console.log(`    ${chalk.gray('Run: npm run local-deploy')}`)
+    }
+    console.log('')
+
+    // System Information
+    console.log(chalk.white.bold('System Information:'))
+    console.log(`  ${chalk.cyan('Platform:')} ${process.platform} ${process.arch}`)
+    console.log(`  ${chalk.cyan('Node.js:')} ${process.version}`)
+    console.log(`  ${chalk.cyan('Memory Usage:')} ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB / ${Math.round(process.memoryUsage().rss / 1024 / 1024)}MB`)
+    console.log(`  ${chalk.cyan('Uptime:')} ${Math.round(process.uptime())}s`)
+    
+    // Check for common tools
+    const tools = ['code', 'git', 'npm', 'npx']
+    console.log(`  ${chalk.cyan('Available Tools:')}`)
+    tools.forEach(tool => {
+        try {
+            child_process.execSync(`${tool} --version`, { stdio: 'ignore' })
+            console.log(`    ${chalk.green('✓')} ${tool}`)
+        } catch {
+            console.log(`    ${chalk.red('✗')} ${tool}`)
+        }
+    })
+    console.log('')
+
+    // Common Issues Check
+    console.log(chalk.red.bold('Common Issues Check:'))
+    const issues: string[] = []
+    
+    // Check for spaces in path
+    if (projectPath.includes(' ')) {
+        issues.push('Project path contains spaces - may cause build issues')
+    }
+    
+    // Check for missing main.ts
+    const mainTsPath = path.join(projectPath, 'tscripts', 'main.ts')
+    if (!fs.existsSync(mainTsPath)) {
+        issues.push('main.ts entry point not found in tscripts/')
+    }
+    
+    // Check for outdated dependencies
+    if (fs.existsSync(packageJsonPath)) {
+        try {
+            const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
+            const deps = packageJson.dependencies || {}
+            if (deps['@minecraft/server'] && deps['@minecraft/server'].startsWith('1.')) {
+                issues.push('@minecraft/server version may be outdated (v1.x)')
+            }
+        } catch {}
+    }
+    
+    if (issues.length > 0) {
+        issues.forEach((issue, i) => {
+            console.log(`  ${chalk.red(`${i + 1}.`)} ${issue}`)
+        })
+    } else {
+        console.log(`  ${chalk.green('✓')} No common issues detected`)
+    }
+    console.log('')
+
+    // Summary
+    console.log(chalk.green.bold('Summary:'))
+    console.log(`  ${chalk.cyan('Project:')} ${projectName}`)
+    console.log(`  ${chalk.cyan('Status:')} ${deployedCount > 0 ? chalk.green('Deployed') : chalk.yellow('Not deployed')}`)
+    console.log(`  ${chalk.cyan('Issues:')} ${issues.length > 0 ? chalk.red(`${issues.length} found`) : chalk.green('None')}`)
+    console.log('')
+    console.log(chalk.green('✓ Debug information collected'))
+    console.log(chalk.gray('Use this information when reporting bugs or asking for help'))
+    console.log(chalk.gray('Copy this output and share it with developers for faster troubleshooting'))
 }
 
 export function importDevelopmentProjectsTask(rootPath: string): TaskFunction {
