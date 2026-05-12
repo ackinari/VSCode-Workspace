@@ -6,7 +6,7 @@
         "module": "esnext",
         "lib": ["es2020"],
         "moduleResolution": "bundler",
-        "types": ["bun-types", "@minecraft/server", "@minecraft/server-ui", "@minecraft/debug-utilities"],
+        "types": ["node", "bun-types", "@minecraft/server", "@minecraft/server-ui", "@minecraft/debug-utilities"],
 
         "noEmit": true,
         "allowImportingTsExtensions": true,

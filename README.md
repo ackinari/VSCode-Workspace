@@ -12,26 +12,31 @@ TypeScript files inside `tscripts/` are compiled direct into `behavior_pack/scri
 
 ### Overview
 ```
-workspace/
-├── .vscode/                   # Workspace configs (tasks / settings)
+workspace/                      # Workspace Raiz / Pai
+├── .vscode/                    # Configurações globais / Tasks
 │   └── ...
-├── backups/                   # Own projects generated backups
-├── libraries/                 # Shared libraries (not implemented yet)
-├── projects/                  # Individual projects
-│   ├── template/              # Base template for new projects
-│   └── your_project/          # User projects
+├── backups/                    # Backups gerados pelo usuário dos próprios projetos no formato dd-MM-yyyy.zip
+├── libraries/                  # Bibliotecas globais que podem ser usadas em todos os projetos via bundler (como se fosse um node_module local)
+├── node_modules/
+├── projects/                   # Projetos do usuário (mini-workspaces) / Filhos
+│   └── your_project_name/      # Projeto individual do usuário
 │       ├── behavior_pack/
 │       ├── resource_pack/
-│       ├── tscripts/
-│       └── tsconfig.json      # TypeScript configs
+│       ├── tscripts/           # Pasta de scripts separada usada com o Bun Build -Watch
+│       └── tsconfig.json       # Link para o tsconfig Global
+├── templates/                  # Base de templates para novos projetos
+│   ├── addon/
+│   └── .../
+├── workspace/                  # Script das tasks do workspace
+│   ├── source/                 # Bibliotecas e tasks
+│   └── task-runner.ts/         # Handler das tasks
 ├── .gitgnore
-├── .prettierc.json            # Prettier configs
-├── eslint.config.mjs          # ESlint configs
-├── just.config.ts             # Task configs
-├── package.json               # Dependencies and scripts
-├── README.md                  # Hi!
-└── tsconfig.json              # Main TypeScript configs
-
+├── .gitmodules                 # Inclui outros repositórios de bibliotecas nas bibliotecas globais
+├── .prettierc.json             # Configuração global do Prettier
+├── bun.lock
+├── package.json                # Dependências e registro de tasks
+├── README.md                   # Informações do repositório
+└── tsconfig.json               # tsconfig Global
 ```
 
 The `projects/template` project is the main project it gets cloned every time you start a new project, so beware of that before editing it. Besides that, Feel free to edit it according to your needs.
